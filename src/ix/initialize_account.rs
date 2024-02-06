@@ -98,51 +98,14 @@ fn checked_initialize_account(
         &[args.owner.as_ref(), mint_index.as_ref(), &[args.bump as u8]];
 
     // Init 1) Create token account
-    // We need to get the account infos on stack, within a limited scope
-    // Since we borrow both lamports and data, we only need to check once
-    {
-        // Get system program info
-        let mut system_program_lamports_mut_ref = system_program
-            .try_borrow_mut_lamports()
-            .expect("first borrow won't fail"); // TODO unchecked
-        let system_program_data_mut_ref = unsafe { system_program.unchecked_borrow_mut_data() };
-        let system_program_prep = (
-            RcRefCellInner::new(system_program_lamports_mut_ref.deref_mut()),
-            RcRefCellInner::new(system_program_data_mut_ref),
-        );
-        let system_program_info = unsafe { system_program.info_with(&system_program_prep) };
-
-        // Get payer info
-        let mut payer_lamports_mut_ref = payer
-            .try_borrow_mut_lamports()
-            .ok_or(NanoTokenError::DuplicateAccount)?;
-        let payer_data_mut_ref = unsafe { payer.unchecked_borrow_mut_data() };
-        let payer_prep = (
-            RcRefCellInner::new(payer_lamports_mut_ref.deref_mut()),
-            RcRefCellInner::new(payer_data_mut_ref),
-        );
-        let payer_info = unsafe { payer.info_with(&payer_prep) };
-
-        // Get token account info
-        let mut token_account_lamports_mut_ref = token_account
-            .try_borrow_mut_lamports()
-            .ok_or(NanoTokenError::DuplicateAccount)?;
-        let token_account_data_mut_ref = unsafe { token_account.unchecked_borrow_mut_data() };
-        let token_account_prep = (
-            RcRefCellInner::new(token_account_lamports_mut_ref.deref_mut()),
-            RcRefCellInner::new(token_account_data_mut_ref),
-        );
-        let token_account_info = unsafe { token_account.info_with(&token_account_prep) };
-
-        create_pda_funded_by_payer(
-            token_account_info,
-            &crate::ID,
-            TokenAccount::space() as u64,
-            token_account_seeds,
-            system_program_info,
-            payer_info,
-        )?;
-    }
+    create_pda_funded_by_payer(
+        token_account.to_info_c(),
+        &crate::ID,
+        TokenAccount::space() as u64,
+        token_account_seeds,
+        system_program.to_info_c(),
+        payer.to_info_c(),
+    )?;
 
     // Split data into discriminator and token account
     // SAFETY:

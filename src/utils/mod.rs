@@ -1,27 +1,24 @@
 use arrayref::mut_array_refs;
+use solana_nostd_entrypoint::{AccountInfoC, InstructionC};
 use solana_program::{
-    account_info::AccountInfo, entrypoint::ProgramResult, instruction::AccountMeta, log,
-    program_error::ProgramError, pubkey::Pubkey, rent::Rent, sysvar::Sysvar,
+    entrypoint::ProgramResult, log, program_error::ProgramError, pubkey::Pubkey, rent::Rent,
+    sysvar::Sysvar,
 };
-
-use self::cpi::{StableInstruction, StableView};
-
-pub mod cpi;
 
 /// Creates a new pda
 #[inline(always)]
-pub fn create_pda_funded_by_payer<'a>(
-    target_account: AccountInfo<'a>,
+pub fn create_pda_funded_by_payer(
+    target_account: AccountInfoC,
     owner: &Pubkey,
     space: u64,
     pda_seeds: &[&[u8]],
-    system_program: AccountInfo<'a>,
-    payer: AccountInfo<'a>,
+    system_program: AccountInfoC,
+    payer: AccountInfoC,
 ) -> ProgramResult {
     let rent_sysvar = Rent::get()?;
     let rent_due = rent_sysvar
         .minimum_balance(space as usize)
-        .saturating_sub(target_account.lamports());
+        .saturating_sub(unsafe { *target_account.lamports });
 
     // Initialize ix: data
     let mut create_account_ix_data: [u8; 52] = [0; 4 + 8 + 8 + 32];
@@ -37,26 +34,23 @@ pub fn create_pda_funded_by_payer<'a>(
     *owner_bytes = owner.to_bytes();
 
     // Instruction accounts: from, to
-    let mut instruction_accounts = [
-        AccountMeta::new(payer.key.clone(), true),
-        AccountMeta::new(target_account.key.clone(), true),
-    ];
+    let instruction_accounts = [payer.to_meta_c(), target_account.to_meta_c_signer()];
 
     // Build instruction
-    let data = StableView::from_array(&mut create_account_ix_data);
-    let accounts = StableView::from_array(&mut instruction_accounts);
-    let create_account_instruction = StableInstruction {
-        data,
-        accounts,
-        program_id: solana_program::system_program::ID,
+    let create_account_instruction = InstructionC {
+        data: create_account_ix_data.as_ptr(),
+        data_len: 52,
+        accounts: instruction_accounts.as_ptr(),
+        accounts_len: 2,
+        program_id: &solana_program::system_program::ID,
     };
     let create_account_account_infos = [payer, target_account, system_program];
 
     let cpi_seeds = &[pda_seeds];
     #[cfg(target_os = "solana")]
     unsafe {
-        solana_program::syscalls::sol_invoke_signed_rust(
-            (&create_account_instruction) as *const StableInstruction as *const u8,
+        solana_program::syscalls::sol_invoke_signed_c(
+            (&create_account_instruction) as *const InstructionC as *const u8,
             create_account_account_infos.as_ptr() as *const u8,
             3,
             cpi_seeds.as_ptr() as *const u8,
