@@ -1,11 +1,8 @@
-use core::ops::DerefMut;
-
 use bytemuck::{Pod, Zeroable};
-use solana_nostd_entrypoint::{NoStdAccountInfo4, RcRefCellInner};
+use solana_nostd_entrypoint::NoStdAccountInfo4;
 use solana_program::{entrypoint::ProgramResult, log, program_error::ProgramError, pubkey::Pubkey};
 
 use crate::{
-    error::NanoTokenError,
     utils::{create_pda_funded_by_payer, split_at_mut_unchecked, split_at_unchecked},
     AccountDiscriminator, ProgramConfig, TokenAccount,
 };
