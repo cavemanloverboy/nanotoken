@@ -50,7 +50,12 @@ fn process_instruction_nostd(
         #[inline(always)]
         || {
             if !validated_config {
-                if *config.key() != CONFIG_ACCOUNT {
+                if solana_program::program_memory::sol_memcmp(
+                    config.key().as_ref(),
+                    &CONFIG_ACCOUNT.as_ref(),
+                    32,
+                ) != 0
+                {
                     log::sol_log("config does not have expected pubkey");
                     return Err(ProgramError::InvalidArgument);
                 }
@@ -66,7 +71,12 @@ fn process_instruction_nostd(
         #[inline(always)]
         || {
             if !validated_sys_program {
-                if *system_program.key() != SYSTEM_PROGRAM {
+                if solana_program::program_memory::sol_memcmp(
+                    system_program.key().as_ref(),
+                    SYSTEM_PROGRAM.as_ref(),
+                    32,
+                ) != 0
+                {
                     log::sol_log("system_program does not have expected pubkey");
                     return Err(ProgramError::InvalidArgument);
                 }

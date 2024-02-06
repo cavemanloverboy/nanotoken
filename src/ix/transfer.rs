@@ -1,3 +1,5 @@
+use core::ops::{AddAssign, SubAssign};
+
 use bytemuck::{Pod, Zeroable};
 use solana_nostd_entrypoint::NoStdAccountInfo4;
 use solana_program::{log, program_error::ProgramError};
@@ -38,10 +40,11 @@ pub fn transfer(accounts: &[NoStdAccountInfo4], args: &Transfer) -> Result<usize
         return Err(ProgramError::NotEnoughAccountKeys);
     };
 
-    // Return early if transfering zero
-    if args.amount == 0 {
-        return Ok(3);
-    }
+    // this seems to cost 0 cus...
+    // // Return early if transfering zero
+    // if args.amount == 0 {
+    //     return Ok(3);
+    // }
 
     // Check that owner signed this
     if !owner.is_signer() {
@@ -61,7 +64,14 @@ pub fn transfer(accounts: &[NoStdAccountInfo4], args: &Transfer) -> Result<usize
     }
 
     // Check that the owner is correct
-    if from_account.owner != *owner.key() {
+    // if from_account.owner != *owner.key() {
+    // if pubkey_neq(&from_account.owner, owner.key()) {
+    if solana_program::program_memory::sol_memcmp(
+        from_account.owner.as_ref(),
+        owner.key().as_ref(),
+        32,
+    ) != 0
+    {
         log::sol_log("incorrect from_account owner");
         return Err(ProgramError::IllegalOwner);
     }
@@ -74,7 +84,7 @@ pub fn transfer(accounts: &[NoStdAccountInfo4], args: &Transfer) -> Result<usize
 
     // Transfer
     from_account.balance -= args.amount;
-    to_account.balance -= args.amount;
+    to_account.balance += args.amount;
 
     Ok(3)
 }

@@ -67,7 +67,7 @@ impl<'a> Iterator for InstructionIter<'a> {
         // SAFETY:
         // We do length check manually (!is_empty) to return None instead of panicking
         let (tag, data) = unsafe { split_at_unchecked(self.data, 8) };
-        let tag = unsafe { *(tag.as_ptr() as *const u8) }; // very minor perf todo: we can probably just read and cmp the first byte...
+        let tag = unsafe { *(tag.as_ptr() as *const u8) }; // little endian
         self.data = data;
 
         match tag {

@@ -127,7 +127,7 @@ fn checked_initialized_mint(
             log::sol_log("max decimals is 12");
             return Err(NanoTokenError::InvalidDecimals.into());
         }
-        *decimals = args.decimals as u8; // TODO
+        *decimals = args.decimals as u8;
     }
 
     Ok(())

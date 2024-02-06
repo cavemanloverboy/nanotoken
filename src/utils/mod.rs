@@ -142,3 +142,8 @@ pub unsafe fn split_at_mut_unchecked<T>(slice: &mut [T], mid: usize) -> (&mut [T
         )
     }
 }
+
+// #[inline(always)]
+// pub(crate) fn pubkey_neq(a: &Pubkey, b: &Pubkey) -> bool {
+//     solana_program::program_memory::sol_memcmp(a.as_ref(), b.as_ref(), 32) != 0
+// }

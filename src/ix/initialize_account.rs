@@ -43,7 +43,7 @@ pub fn initialize_account(
     accounts: &[NoStdAccountInfo4],
     args: &InitializeAccountArgs,
 ) -> Result<usize, ProgramError> {
-    log::sol_log("init account");
+    // log::sol_log("init account");
     // Unpack accounts
     //
     // 1) Token account will be checked by checked_initialize_account
@@ -112,7 +112,8 @@ fn checked_initialize_account(
     let (disc, token_account_data) = unsafe { split_at_mut_unchecked(account_data, 8) };
 
     // Init 2) Write initialized disc
-    disc.copy_from_slice(&(AccountDiscriminator::Token as u64).to_le_bytes()); // minor perf todo: just need to copy first byte
+    // disc.copy_from_slice(&(AccountDiscriminator::Token as u64).to_le_bytes()); // minor perf todo: just need to copy first byte
+    disc[0] = AccountDiscriminator::Token as u8; // minor perf todo: just need to copy first byte
 
     // Init 3) Write initial state
     let TokenAccount {
