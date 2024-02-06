@@ -108,23 +108,26 @@ fn checked_initialize_account(
     // SAFETY:
     // 1) no one holds a view into the token account
     // 2) we just validated data length by creating account
-    let account_data = unsafe { token_account.unchecked_borrow_mut_data() };
-    let (disc, token_account_data) = unsafe { split_at_mut_unchecked(account_data, 8) };
+    unsafe {
+        let account_data = token_account.unchecked_borrow_mut_data();
+        let (disc, token_account_data) =
+            split_at_mut_unchecked(account_data, 8);
 
-    // Init 2) Write initialized disc
-    // disc.copy_from_slice(&(AccountDiscriminator::Token as u64).to_le_bytes()); // minor perf todo: just need to copy first byte
-    disc[0] = AccountDiscriminator::Token as u8; // minor perf todo: just need to copy first byte
+        // Init 2) Write initialized disc
+        *(disc.as_mut_ptr() as *mut u8) = AccountDiscriminator::Token as u8;
 
-    // Init 3) Write initial state
-    let TokenAccount {
-        owner,
-        mint,
-        balance,
-    } = unsafe { &mut *(token_account_data.as_mut_ptr() as *mut TokenAccount) };
-    *owner = args.owner;
-    // SAFETY: little endian byte memcpy. alignment is correct due to TokenAccount.
-    unsafe { *(mint as *mut u64 as *mut [u8; 8]) = mint_index };
-    *balance = 0;
+        // Init 3) Write initial state
+        let TokenAccount {
+            owner,
+            mint,
+            balance,
+        } = &mut *(token_account_data.as_mut_ptr() as *mut TokenAccount);
+        *owner = args.owner;
+        // SAFETY: little endian byte memcpy. alignment is correct due to
+        // TokenAccount.
+        *(mint as *mut u64 as *mut [u8; 8]) = mint_index;
+        *balance = 0;
+    }
 
     Ok(())
 }
