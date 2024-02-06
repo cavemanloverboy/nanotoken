@@ -327,4 +327,21 @@ impl TokenAccount {
 
         Ok(unsafe { &mut *(token_account_bytes.as_mut_ptr() as *mut TokenAccount) })
     }
+
+    pub unsafe fn check_disc(
+        token_account: &NoStdAccountInfo4,
+    ) -> Result<(&Pubkey, *mut u64), ProgramError> {
+        // Unpack and split data into discriminator & token_account
+        let (disc, token_account_bytes) = token_account.unchecked_borrow_data().split_at(8);
+
+        // We only need to check the first byte
+        if disc[0] != AccountDiscriminator::Token as u8 {
+            log::sol_log("token_account discriminator is incorrect");
+            return Err(ProgramError::InvalidAccountData);
+        }
+
+        let account = unsafe { &*(token_account_bytes.as_ptr() as *const TokenAccount) };
+
+        Ok((&account.owner, &account.balance as *const u64 as *mut u64))
+    }
 }

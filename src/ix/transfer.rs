@@ -1,5 +1,3 @@
-use core::ops::{AddAssign, SubAssign};
-
 use bytemuck::{Pod, Zeroable};
 use solana_nostd_entrypoint::NoStdAccountInfo4;
 use solana_program::{log, program_error::ProgramError};
@@ -40,11 +38,15 @@ pub fn transfer(accounts: &[NoStdAccountInfo4], args: &Transfer) -> Result<usize
         return Err(ProgramError::NotEnoughAccountKeys);
     };
 
+    // Return early if transfering zero
     // this seems to cost 0 cus...
-    // // Return early if transfering zero
-    // if args.amount == 0 {
-    //     return Ok(3);
-    // }
+    //
+    // This is necessary!
+    // It is extremely cheap implicit owner check for from/to in nontrivial from != to case.
+    // In the trivial from == to case, it doesn't matter since nothing is transferred
+    if args.amount == 0 {
+        return Ok(3);
+    }
 
     // Check that owner signed this
     if !owner.is_signer() {
@@ -54,11 +56,12 @@ pub fn transfer(accounts: &[NoStdAccountInfo4], args: &Transfer) -> Result<usize
 
     // Load from_account
     // perf note: unsafe { unwrap_unchecked } uses more cus...
-    let mut from_data = from.try_borrow_mut_data().expect("first borrow won't fail");
-    let from_account = TokenAccount::checked_load_mut(&mut from_data)?;
+    // let mut from_data = from.try_borrow_mut_data().expect("first borrow won't fail");
+    let (from_owner, from_balance) = unsafe { TokenAccount::check_disc(from)? };
+    let (_to_owner, to_balance) = unsafe { TokenAccount::check_disc(to)? };
 
     // Check from_account balance
-    if from_account.balance < args.amount {
+    if unsafe { *from_balance } < args.amount {
         log::sol_log("insufficient balance");
         return Err(NanoTokenError::InsufficientTokenBalance.into());
     }
@@ -66,25 +69,18 @@ pub fn transfer(accounts: &[NoStdAccountInfo4], args: &Transfer) -> Result<usize
     // Check that the owner is correct
     // if from_account.owner != *owner.key() {
     // if pubkey_neq(&from_account.owner, owner.key()) {
-    if solana_program::program_memory::sol_memcmp(
-        from_account.owner.as_ref(),
-        owner.key().as_ref(),
-        32,
-    ) != 0
+    if solana_program::program_memory::sol_memcmp(from_owner.as_ref(), owner.key().as_ref(), 32)
+        != 0
     {
         log::sol_log("incorrect from_account owner");
         return Err(ProgramError::IllegalOwner);
     }
 
-    // Load to_account
-    let mut to_data = to
-        .try_borrow_mut_data()
-        .ok_or(NanoTokenError::DuplicateAccount)?;
-    let to_account = TokenAccount::checked_load_mut(&mut to_data)?;
-
     // Transfer
-    from_account.balance -= args.amount;
-    to_account.balance += args.amount;
+    unsafe {
+        *from_balance -= args.amount;
+        *to_balance += args.amount;
+    }
 
     Ok(3)
 }
