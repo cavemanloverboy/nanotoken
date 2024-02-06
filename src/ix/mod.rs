@@ -70,7 +70,7 @@ impl<'a> Iterator for InstructionIter<'a> {
 
         // Parse tag
         // SAFETY:
-        // We do length check manually (!is_empty) to return None instead of panicking
+        // We do length check manually to return None instead of panicking
         let (tag, data) = unsafe { split_at_unchecked(self.data, 8) };
         let tag = unsafe { *(tag.as_ptr() as *const u8) }; // little endian
         self.data = data;
