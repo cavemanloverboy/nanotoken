@@ -119,6 +119,10 @@ fn process_instruction_nostd(
                 // don't need to validate config or sys program
                 mint(&accounts[ai..], args)
             }
+            Ix::Burn(args) => {
+                // don't need to validate config or sys program
+                burn(&accounts[ai..], args)
+            }
             Ix::Transfer(args) => {
                 // don't need to validate config or sys program
                 transfer(&accounts[ai..], args)

@@ -11,6 +11,9 @@ pub use initialize_account::*;
 pub mod mint;
 pub use mint::*;
 
+pub mod burn;
+pub use burn::*;
+
 pub mod transfer;
 pub use transfer::*;
 
@@ -28,6 +31,7 @@ pub enum ProgramInstruction {
     InitializeMint(InitializeMintArgs),
     InitializeAccount(InitializeAccountArgs),
     Mint(MintArgs),
+    Burn(BurnArgs),
     Transfer(Transfer),
 }
 
@@ -43,6 +47,7 @@ pub(crate) enum ProgramInstructionRef<'a> {
     InitializeAccount(&'a InitializeAccountArgs),
     InitializeMint(&'a InitializeMintArgs),
     Mint(&'a MintArgs),
+    Burn(&'a BurnArgs),
     Transfer(&'a Transfer),
 }
 
@@ -88,6 +93,10 @@ impl<'a> Iterator for InstructionIter<'a> {
 
             x if x == Tag::Mint as u8 => {
                 Some(MintArgs::from_data(&mut self.data).map(ProgramInstructionRef::Mint))
+            }
+
+            x if x == Tag::Burn as u8 => {
+                Some(BurnArgs::from_data(&mut self.data).map(ProgramInstructionRef::Burn))
             }
 
             x if x == Tag::Transfer as u8 => {
