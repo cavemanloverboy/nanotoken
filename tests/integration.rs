@@ -27,9 +27,10 @@ async fn end_to_end() -> Result<(), Box<dyn Error>> {
     let mut ctx = program_test.start_with_context().await;
 
     // Initialize config
-    let config_keypair =
-        read_keypair_file(Path::new(&env::var("CARGO_MANIFEST_DIR").unwrap()).join("config.json"))
-            .unwrap();
+    let config_keypair = read_keypair_file(
+        Path::new(&env::var("CARGO_MANIFEST_DIR").unwrap()).join("config.json"),
+    )
+    .unwrap();
     let config = config_keypair.pubkey();
     let create_config = system_transaction::create_account(
         &ctx.payer,
@@ -82,7 +83,8 @@ async fn end_to_end() -> Result<(), Box<dyn Error>> {
     //     .await
     //     .unwrap();
     // for chunk in buses.chunks(10) {
-    //     let extend = solana_sdk::address_lookup_table::instruction::extend_lookup_table(
+    //     let extend =
+    // solana_sdk::address_lookup_table::instruction::extend_lookup_table(
     //         alt_address,
     //         ctx.payer.pubkey(),
     //         Some(ctx.payer.pubkey()),
@@ -99,7 +101,8 @@ async fn end_to_end() -> Result<(), Box<dyn Error>> {
     //         .await
     //         .unwrap();
     // }
-    // let finalize = solana_sdk::address_lookup_table::instruction::freeze_lookup_table(
+    // let finalize =
+    // solana_sdk::address_lookup_table::instruction::freeze_lookup_table(
     //     alt_address,
     //     ctx.payer.pubkey(),
     // );
@@ -120,7 +123,9 @@ async fn end_to_end() -> Result<(), Box<dyn Error>> {
     // };
 
     // Initialize config
-    let ix_data = (Tag::InitializeConfig as u64).to_le_bytes().to_vec();
+    let ix_data = (Tag::InitializeConfig as u64)
+        .to_le_bytes()
+        .to_vec();
 
     let accounts = vec![
         AccountMeta::new(config, false),
@@ -177,21 +182,28 @@ async fn end_to_end() -> Result<(), Box<dyn Error>> {
         .unwrap();
 
     // Initialize token account AND mint
-    let mut ix_data = vec![0; 8 + InitializeAccountArgs::size() + 8 + MintArgs::size()];
-    let (token_account, token_account_bump) = TokenAccount::address(0, &ctx.payer.pubkey());
+    let mut ix_data =
+        vec![0; 8 + InitializeAccountArgs::size() + 8 + MintArgs::size()];
+    let (token_account, token_account_bump) =
+        TokenAccount::address(0, &ctx.payer.pubkey());
     {
-        ix_data[0..8].copy_from_slice(&(Tag::InitializeAccount as u64).to_le_bytes());
+        ix_data[0..8]
+            .copy_from_slice(&(Tag::InitializeAccount as u64).to_le_bytes());
         let InitializeAccountArgs { owner, mint, bump } =
-            bytemuck::try_from_bytes_mut(&mut ix_data[8..8 + InitializeAccountArgs::size()])
-                .unwrap();
+            bytemuck::try_from_bytes_mut(
+                &mut ix_data[8..8 + InitializeAccountArgs::size()],
+            )
+            .unwrap();
         *owner = ctx.payer.pubkey();
         *mint = 0;
         *bump = token_account_bump as u64;
-        ix_data[8 + InitializeAccountArgs::size()..8 + InitializeAccountArgs::size() + 8]
+        ix_data[8 + InitializeAccountArgs::size()
+            ..8 + InitializeAccountArgs::size() + 8]
             .copy_from_slice(&(Tag::Mint as u64).to_le_bytes());
-        let MintArgs { amount } =
-            bytemuck::try_from_bytes_mut(&mut ix_data[8 + InitializeAccountArgs::size() + 8..])
-                .unwrap();
+        let MintArgs { amount } = bytemuck::try_from_bytes_mut(
+            &mut ix_data[8 + InitializeAccountArgs::size() + 8..],
+        )
+        .unwrap();
         *amount = 1000;
     }
     let accounts = vec![
@@ -242,10 +254,13 @@ async fn end_to_end() -> Result<(), Box<dyn Error>> {
     let (second_token_account, token_account_bump) =
         TokenAccount::address(0, &second_user.pubkey());
     {
-        ix_data[0..8].copy_from_slice(&(Tag::InitializeAccount as u64).to_le_bytes());
+        ix_data[0..8]
+            .copy_from_slice(&(Tag::InitializeAccount as u64).to_le_bytes());
         let InitializeAccountArgs { owner, mint, bump } =
-            bytemuck::try_from_bytes_mut(&mut ix_data[8..8 + InitializeAccountArgs::size()])
-                .unwrap();
+            bytemuck::try_from_bytes_mut(
+                &mut ix_data[8..8 + InitializeAccountArgs::size()],
+            )
+            .unwrap();
         *owner = second_user.pubkey();
         *mint = 0;
         *bump = token_account_bump as u64;
@@ -282,7 +297,8 @@ async fn end_to_end() -> Result<(), Box<dyn Error>> {
     {
         ix_data[0..8].copy_from_slice(&(Tag::Transfer as u64).to_le_bytes());
         let Transfer { amount } =
-            bytemuck::try_from_bytes_mut(&mut ix_data[8..8 + Transfer::size()]).unwrap();
+            bytemuck::try_from_bytes_mut(&mut ix_data[8..8 + Transfer::size()])
+                .unwrap();
         *amount = 5;
     }
     let accounts = vec![

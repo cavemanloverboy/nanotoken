@@ -2,7 +2,9 @@ use bytemuck::{Pod, Zeroable};
 use solana_nostd_entrypoint::NoStdAccountInfo4;
 use solana_program::{log, program_error::ProgramError};
 
-use crate::{error::NanoTokenError, utils::split_at_unchecked, Mint, TokenAccount};
+use crate::{
+    error::NanoTokenError, utils::split_at_unchecked, Mint, TokenAccount,
+};
 
 #[derive(PartialEq, Debug, Clone, Copy, Pod, Zeroable)]
 #[repr(C)]
@@ -11,12 +13,15 @@ pub struct BurnArgs {
 }
 
 impl BurnArgs {
-    pub fn from_data<'a>(data: &mut &'a [u8]) -> Result<&'a BurnArgs, ProgramError> {
+    pub fn from_data<'a>(
+        data: &mut &'a [u8],
+    ) -> Result<&'a BurnArgs, ProgramError> {
         const IX_LEN: usize = core::mem::size_of::<BurnArgs>();
         if data.len() >= IX_LEN {
             // SAFETY:
-            // We do the length check ourselves instead of via core::slice::split_at
-            // so we can return an error instead of panicking.
+            // We do the length check ourselves instead of via
+            // core::slice::split_at so we can return an error
+            // instead of panicking.
             let (ix_data, rem) = unsafe { split_at_unchecked(data, IX_LEN) };
             *data = rem;
             Ok(bytemuck::try_from_bytes(ix_data)
@@ -30,7 +35,10 @@ impl BurnArgs {
     }
 }
 
-pub fn burn(accounts: &[NoStdAccountInfo4], args: &BurnArgs) -> Result<usize, ProgramError> {
+pub fn burn(
+    accounts: &[NoStdAccountInfo4],
+    args: &BurnArgs,
+) -> Result<usize, ProgramError> {
     log::sol_log("burn");
     let [from, mint, owner, _rem @ ..] = accounts else {
         log::sol_log("mint expecting [from, mint, owner, .. ]");
@@ -43,12 +51,15 @@ pub fn burn(accounts: &[NoStdAccountInfo4], args: &BurnArgs) -> Result<usize, Pr
     // This is necessary!
     // It is extremely cheap implicit owner check for mint/to
     if args.amount == 0 {
-        return Ok(2);
+        return Ok(3);
     }
 
     // Load mint account
-    // we do not do an owner check since we will mutate (add nonzero amount to supply)
-    let mut mint_data = mint.try_borrow_mut_data().expect("first borrow won't fail"); // TODO unchecked
+    // we do not do an owner check since we will mutate (add nonzero amount to
+    // supply)
+    let mut mint_data = mint
+        .try_borrow_mut_data()
+        .expect("first borrow won't fail"); // TODO unchecked
     let mint_account = Mint::checked_load_mut(&mut mint_data)?;
 
     // Check if from is signer
@@ -58,7 +69,8 @@ pub fn burn(accounts: &[NoStdAccountInfo4], args: &BurnArgs) -> Result<usize, Pr
     }
 
     // Load account
-    // we do not do an owner check since we will mutate (sub nonzero amount from supply/balance)
+    // we do not do an owner check since we will mutate (sub nonzero amount from
+    // supply/balance)
     let mut from_data = from
         .try_borrow_mut_data()
         .ok_or(NanoTokenError::DuplicateAccount)?;

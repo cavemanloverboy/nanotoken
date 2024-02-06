@@ -15,10 +15,9 @@ pub mod burn;
 pub use burn::*;
 
 pub mod transfer;
-pub use transfer::*;
-
 use solana_program::program_error::ProgramError;
 use strum::EnumDiscriminants;
+pub use transfer::*;
 
 use crate::utils::split_at_unchecked;
 
@@ -91,17 +90,20 @@ impl<'a> Iterator for InstructionIter<'a> {
                     .map(ProgramInstructionRef::InitializeAccount),
             ),
 
-            x if x == Tag::Mint as u8 => {
-                Some(MintArgs::from_data(&mut self.data).map(ProgramInstructionRef::Mint))
-            }
+            x if x == Tag::Mint as u8 => Some(
+                MintArgs::from_data(&mut self.data)
+                    .map(ProgramInstructionRef::Mint),
+            ),
 
-            x if x == Tag::Burn as u8 => {
-                Some(BurnArgs::from_data(&mut self.data).map(ProgramInstructionRef::Burn))
-            }
+            x if x == Tag::Burn as u8 => Some(
+                BurnArgs::from_data(&mut self.data)
+                    .map(ProgramInstructionRef::Burn),
+            ),
 
-            x if x == Tag::Transfer as u8 => {
-                Some(Transfer::from_data(&mut self.data).map(ProgramInstructionRef::Transfer))
-            }
+            x if x == Tag::Transfer as u8 => Some(
+                Transfer::from_data(&mut self.data)
+                    .map(ProgramInstructionRef::Transfer),
+            ),
 
             _ => None,
         }

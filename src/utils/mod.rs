@@ -1,8 +1,8 @@
 use arrayref::mut_array_refs;
 use solana_nostd_entrypoint::{AccountInfoC, InstructionC};
 use solana_program::{
-    entrypoint::ProgramResult, log, program_error::ProgramError, pubkey::Pubkey, rent::Rent,
-    sysvar::Sysvar,
+    entrypoint::ProgramResult, log, program_error::ProgramError,
+    pubkey::Pubkey, rent::Rent, sysvar::Sysvar,
 };
 
 /// Creates a new pda
@@ -34,7 +34,8 @@ pub fn create_pda_funded_by_payer(
     *owner_bytes = owner.to_bytes();
 
     // Instruction accounts: from, to
-    let instruction_accounts = [payer.to_meta_c(), target_account.to_meta_c_signer()];
+    let instruction_accounts =
+        [payer.to_meta_c(), target_account.to_meta_c_signer()];
 
     // Build instruction
     let create_account_instruction = InstructionC {
@@ -88,7 +89,9 @@ pub fn check_pda_address(
                 )
             };
             match result {
-                solana_program::entrypoint::SUCCESS => (Pubkey::from(bytes), bump_seed),
+                solana_program::entrypoint::SUCCESS => {
+                    (Pubkey::from(bytes), bump_seed)
+                }
                 _ => panic!("failed to find seeds for program"),
             }
         }
@@ -107,7 +110,10 @@ pub fn check_pda_address(
 
 /// Taken from nightly rust
 #[inline(always)]
-pub const unsafe fn split_at_unchecked<T>(slice: &[T], mid: usize) -> (&[T], &[T]) {
+pub const unsafe fn split_at_unchecked<T>(
+    slice: &[T],
+    mid: usize,
+) -> (&[T], &[T]) {
     // HACK: the const function `from_raw_parts` is used to make this
     // function const; previously the implementation used
     // `(slice.get_unchecked(..mid), slice.get_unchecked(mid..))`
@@ -126,7 +132,10 @@ pub const unsafe fn split_at_unchecked<T>(slice: &[T], mid: usize) -> (&[T], &[T
 
 /// Taken from nightly rust
 #[inline(always)]
-pub unsafe fn split_at_mut_unchecked<T>(slice: &mut [T], mid: usize) -> (&mut [T], &mut [T]) {
+pub unsafe fn split_at_mut_unchecked<T>(
+    slice: &mut [T],
+    mid: usize,
+) -> (&mut [T], &mut [T]) {
     // HACK: the const function `from_raw_parts` is used to make this
     // function const; previously the implementation used
     // `(slice.get_unchecked(..mid), slice.get_unchecked(mid..))`
@@ -145,5 +154,5 @@ pub unsafe fn split_at_mut_unchecked<T>(slice: &mut [T], mid: usize) -> (&mut [T
 
 // #[inline(always)]
 // pub(crate) fn pubkey_neq(a: &Pubkey, b: &Pubkey) -> bool {
-//     solana_program::program_memory::sol_memcmp(a.as_ref(), b.as_ref(), 32) != 0
-// }
+//     solana_program::program_memory::sol_memcmp(a.as_ref(), b.as_ref(), 32) !=
+// 0 }

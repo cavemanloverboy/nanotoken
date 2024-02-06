@@ -5,7 +5,8 @@ use consts::CONFIG_ACCOUNT;
 use solana_nostd_entrypoint::{
     entrypoint_nostd4,
     solana_program::{
-        self, declare_id, entrypoint::ProgramResult, program_error::ProgramError, pubkey::Pubkey,
+        self, declare_id, entrypoint::ProgramResult,
+        program_error::ProgramError, pubkey::Pubkey,
         system_program::ID as SYSTEM_PROGRAM,
     },
     NoStdAccountInfo4,
@@ -39,7 +40,8 @@ fn process_instruction_nostd(
     // We lazily check 2/3 of last 3 here since they may be needed
     // in the proceeding instructions.
     // This makes the validation only happen once.
-    // The payer will be checked by any system_program cpis that need to be performed.
+    // The payer will be checked by any system_program cpis that need to be
+    // performed.
     let [_rem @ .., config, system_program, _payer] = accounts else {
         return Err(ProgramError::NotEnoughAccountKeys);
     };
@@ -77,7 +79,9 @@ fn process_instruction_nostd(
                     32,
                 ) != 0
                 {
-                    log::sol_log("system_program does not have expected pubkey");
+                    log::sol_log(
+                        "system_program does not have expected pubkey",
+                    );
                     return Err(ProgramError::InvalidArgument);
                 }
                 validated_sys_program = true;
@@ -253,7 +257,9 @@ impl Mint {
     }
 
     /// TODO DOCS
-    pub fn checked_load_mut(mint_data: &mut [u8]) -> Result<&mut Mint, ProgramError> {
+    pub fn checked_load_mut(
+        mint_data: &mut [u8],
+    ) -> Result<&mut Mint, ProgramError> {
         // Unpack and split data into discriminator & mint
         let (disc, mint_bytes) = mint_data.split_at_mut(8);
 
@@ -277,7 +283,10 @@ pub struct TokenAccount {
 
 impl TokenAccount {
     pub fn address(mint: u64, owner: &Pubkey) -> (Pubkey, u8) {
-        Pubkey::find_program_address(&[owner.as_ref(), mint.to_le_bytes().as_ref()], &crate::ID)
+        Pubkey::find_program_address(
+            &[owner.as_ref(), mint.to_le_bytes().as_ref()],
+            &crate::ID,
+        )
     }
     pub fn size() -> usize {
         core::mem::size_of::<Self>()
@@ -292,8 +301,8 @@ impl TokenAccount {
     /// account data.
     ///
     /// Discriminator is still performed. This does not do an owner check!
-    /// If you call this function you MUST mutate the data to do an implicit owner
-    /// check (should be mutated during e.g. mint, transfer)
+    /// If you call this function you MUST mutate the data to do an implicit
+    /// owner check (should be mutated during e.g. mint, transfer)
     pub unsafe fn unchecked_load_mut(
         token_account: &NoStdAccountInfo4,
     ) -> Result<&mut TokenAccount, ProgramError> {
@@ -315,8 +324,8 @@ impl TokenAccount {
     /// account data.
     ///
     /// Discriminator is still performed. This does not do an owner check!
-    /// If you call this function you MUST mutate the data to do an implicit owner
-    /// check (should be mutated during e.g. mint, transfer)
+    /// If you call this function you MUST mutate the data to do an implicit
+    /// owner check (should be mutated during e.g. mint, transfer)
     pub fn checked_load_mut<'a>(
         token_account_data: &'a mut [u8],
     ) -> Result<&'a mut TokenAccount, ProgramError> {
@@ -329,14 +338,18 @@ impl TokenAccount {
             return Err(ProgramError::InvalidAccountData);
         }
 
-        Ok(unsafe { &mut *(token_account_bytes.as_mut_ptr() as *mut TokenAccount) })
+        Ok(unsafe {
+            &mut *(token_account_bytes.as_mut_ptr() as *mut TokenAccount)
+        })
     }
 
     pub unsafe fn check_disc(
         token_account: &NoStdAccountInfo4,
     ) -> Result<(&Pubkey, *mut u64), ProgramError> {
         // Unpack and split data into discriminator & token_account
-        let (disc, token_account_bytes) = token_account.unchecked_borrow_data().split_at(8);
+        let (disc, token_account_bytes) = token_account
+            .unchecked_borrow_data()
+            .split_at(8);
 
         // We only need to check the first byte
         if disc[0] != AccountDiscriminator::Token as u8 {
@@ -344,7 +357,8 @@ impl TokenAccount {
             return Err(ProgramError::InvalidAccountData);
         }
 
-        let account = unsafe { &*(token_account_bytes.as_ptr() as *const TokenAccount) };
+        let account =
+            unsafe { &*(token_account_bytes.as_ptr() as *const TokenAccount) };
 
         Ok((&account.owner, &account.balance as *const u64 as *mut u64))
     }

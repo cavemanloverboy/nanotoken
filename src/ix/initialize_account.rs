@@ -1,9 +1,13 @@
 use bytemuck::{Pod, Zeroable};
 use solana_nostd_entrypoint::NoStdAccountInfo4;
-use solana_program::{entrypoint::ProgramResult, log, program_error::ProgramError, pubkey::Pubkey};
+use solana_program::{
+    entrypoint::ProgramResult, log, program_error::ProgramError, pubkey::Pubkey,
+};
 
 use crate::{
-    utils::{create_pda_funded_by_payer, split_at_mut_unchecked, split_at_unchecked},
+    utils::{
+        create_pda_funded_by_payer, split_at_mut_unchecked, split_at_unchecked,
+    },
     AccountDiscriminator, ProgramConfig, TokenAccount,
 };
 
@@ -13,19 +17,22 @@ pub struct InitializeAccountArgs {
     pub owner: Pubkey,
     pub mint: u64,
     // 8 byte alignment.
-    // This is provided as an argument to provide the option to do it off chain.
-    // Otherwise, if we do it on-chain via a syscall, it will always be done.
-    // The cpi client will abstract this away and do it internally
+    // This is provided as an argument to provide the option to do it off
+    // chain. Otherwise, if we do it on-chain via a syscall, it will always
+    // be done. The cpi client will abstract this away and do it internally
     pub bump: u64,
 }
 
 impl InitializeAccountArgs {
-    pub fn from_data<'a>(data: &mut &'a [u8]) -> Result<&'a InitializeAccountArgs, ProgramError> {
+    pub fn from_data<'a>(
+        data: &mut &'a [u8],
+    ) -> Result<&'a InitializeAccountArgs, ProgramError> {
         const IX_LEN: usize = core::mem::size_of::<InitializeAccountArgs>();
         if data.len() >= IX_LEN {
             // SAFETY:
-            // We do the length check ourselves instead of via core::slice::split_at
-            // so we can return an error instead of panicking.
+            // We do the length check ourselves instead of via
+            // core::slice::split_at so we can return an error
+            // instead of panicking.
             let (ix_data, rem) = unsafe { split_at_unchecked(data, IX_LEN) };
             *data = rem;
             Ok(unsafe { &*(ix_data.as_ptr() as *const InitializeAccountArgs) })
@@ -49,12 +56,21 @@ pub fn initialize_account(
     // 1) Token account will be checked by checked_initialize_account
     // 2) Config will be checked
     // 4) payer will be checked by the sol transfer if necessary
-    let [token_account, _rem @ .., config, system_program, payer] = accounts else {
-        log::sol_log("expecting token_account, ... config, system_program, payer");
+    let [token_account, _rem @ .., config, system_program, payer] = accounts
+    else {
+        log::sol_log(
+            "expecting token_account, ... config, system_program, payer",
+        );
         return Err(ProgramError::NotEnoughAccountKeys);
     };
 
-    checked_initialize_account(payer, config, token_account, system_program, args)?;
+    checked_initialize_account(
+        payer,
+        config,
+        token_account,
+        system_program,
+        args,
+    )?;
 
     Ok(1)
 }
@@ -81,9 +97,11 @@ fn checked_initialize_account(
     // Check 1) Check seeds (valid index + checked by initialization)
     let mint_index: [u8; 8] = {
         // SAFETY: no one else has a view into config data during this scope
-        let config_account = unsafe { ProgramConfig::unchecked_load_mut(config)? };
+        let config_account =
+            unsafe { ProgramConfig::unchecked_load_mut(config)? };
 
-        // If the mint provided is not than the current mint_index, this is a valid mint
+        // If the mint provided is not than the current mint_index, this is a
+        // valid mint
         if args.mint >= config_account.mint_index {
             log::sol_log("mint u64 provided for initialization is not valid");
             return Err(ProgramError::InvalidInstructionData);
