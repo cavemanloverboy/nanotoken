@@ -38,6 +38,10 @@ pub fn mint(accounts: &[NoStdAccountInfo4], args: &MintArgs) -> Result<usize, Pr
     };
 
     // Early return if 0
+    // this seems to cost 0 cus...
+    //
+    // This is necessary!
+    // It is extremely cheap implicit owner check for mint/to
     if args.amount == 0 {
         return Ok(3);
     }
@@ -66,9 +70,20 @@ pub fn mint(accounts: &[NoStdAccountInfo4], args: &MintArgs) -> Result<usize, Pr
         .ok_or(NanoTokenError::DuplicateAccount)?;
     let to_account = TokenAccount::checked_load_mut(&mut to_data)?;
 
-    // Increment supply, balance
-    mint_account.supply += args.amount;
-    to_account.balance += args.amount;
+    // Check mint
+    if to_account.mint != mint_account.mint_index {
+        log::sol_log("invalid mint");
+        return Err(NanoTokenError::IncorrectMint.into());
+    }
+
+    // Check max
+    if let Some(new_supply) = mint_account.supply.checked_add(args.amount) {
+        mint_account.supply = new_supply;
+        to_account.balance += args.amount;
+    } else {
+        log::sol_log("total supply would exceed u64::MAX");
+        return Err(NanoTokenError::SupplyOverflow.into());
+    }
 
     Ok(3)
 }

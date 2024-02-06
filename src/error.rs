@@ -6,6 +6,8 @@ pub enum NanoTokenError {
     DuplicateAccount,
     InsufficientTokenBalance,
     InvalidDecimals,
+    IncorrectMint,
+    SupplyOverflow,
 }
 
 impl From<NanoTokenError> for ProgramError {
