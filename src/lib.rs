@@ -95,33 +95,23 @@ fn process_instruction_nostd(
     };
 
     // Parse program instructions
-    // let instruction_iter = InstructionIter::new(data);
-    // log::sol_log_64(instruction_iter.count() as u64, 0, 0, 0, 0);
     let instruction_iter = InstructionIter::new(data);
 
     let mut ai = 0;
     for instruction in instruction_iter {
         ai += match instruction? {
             Ix::InitializeConfig(args) => {
-                if config_validator()? {
-                    initialize_config(&accounts[ai..], args)
-                } else {
-                    unreachable!()
-                }
+                config_validator()?;
+                initialize_config(&accounts[ai..], args)
             }
             Ix::InitializeMint(args) => {
-                if sys_program_validator()? {
-                    initialize_mint(&accounts[ai..], args)
-                } else {
-                    unreachable!()
-                }
+                sys_program_validator()?;
+                initialize_mint(&accounts[ai..], args)
             }
             Ix::InitializeAccount(args) => {
-                if config_validator()? && sys_program_validator()? {
-                    initialize_account(&accounts[ai..], args)
-                } else {
-                    unreachable!()
-                }
+                config_validator()?;
+                sys_program_validator()?;
+                initialize_account(&accounts[ai..], args)
             }
             Ix::Mint(args) => {
                 // don't need to validate config or sys program
