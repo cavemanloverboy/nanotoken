@@ -62,9 +62,6 @@ pub fn transfer(
     }
 
     // Load from_account
-    // perf note: unsafe { unwrap_unchecked } uses more cus...
-    // let mut from_data = from.try_borrow_mut_data().expect("first borrow won't
-    // fail");
     let (from_owner, from_balance) = unsafe { TokenAccount::check_disc(from)? };
     let (_to_owner, to_balance) = unsafe { TokenAccount::check_disc(to)? };
 
@@ -75,7 +72,6 @@ pub fn transfer(
     }
 
     // Check that the owner is correct
-    // if from_account.owner != *owner.key() {
     if solana_program::program_memory::sol_memcmp(
         from_owner.as_ref(),
         owner.key().as_ref(),

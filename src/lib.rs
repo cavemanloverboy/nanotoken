@@ -42,6 +42,10 @@ fn process_instruction_nostd(
     // This makes the validation only happen once.
     // The payer will be checked by any system_program cpis that need to be
     // performed.
+    //
+    // Every instruction requires at least 3 accounts, so in the case no
+    // instruction requires validation then these accounts will not correspond
+    // to their labels (which is okay).
     let [_rem @ .., config, system_program, _payer] = accounts else {
         return Err(ProgramError::NotEnoughAccountKeys);
     };
@@ -129,6 +133,7 @@ fn process_instruction_nostd(
             }
             Ix::Transfer(args) => {
                 // don't need to validate config or sys program
+                // todo: can save 1 cu by doing get_unchecked(ai..) here
                 transfer(&accounts[ai..], args)
             }
         }?;
