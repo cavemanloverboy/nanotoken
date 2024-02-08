@@ -95,32 +95,34 @@ fn process_instruction_nostd(
 
     let mut ai = 0;
     for instruction in instruction_iter {
+        // This will never be oob
+        let ix_accounts = unsafe { accounts.get_unchecked(ai..) };
+
         ai += match instruction? {
             Ix::InitializeConfig(args) => {
                 config_validator()?;
-                initialize_config(&accounts[ai..], args)
+                initialize_config(ix_accounts, args)
             }
             Ix::InitializeMint(args) => {
                 sys_program_validator()?;
-                initialize_mint(&accounts[ai..], args)
+                initialize_mint(ix_accounts, args)
             }
             Ix::InitializeAccount(args) => {
                 config_validator()?;
                 sys_program_validator()?;
-                initialize_account(&accounts[ai..], args)
+                initialize_account(ix_accounts, args)
             }
             Ix::Mint(args) => {
                 // don't need to validate config or sys program
-                mint(&accounts[ai..], args)
+                mint(ix_accounts, args)
             }
             Ix::Burn(args) => {
                 // don't need to validate config or sys program
-                burn(&accounts[ai..], args)
+                burn(ix_accounts, args)
             }
             Ix::Transfer(args) => {
                 // don't need to validate config or sys program
-                // todo: can save 1 cu by doing get_unchecked(ai..) here
-                transfer(&accounts[ai..], args)
+                transfer(ix_accounts, args)
             }
         }?;
     }
