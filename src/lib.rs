@@ -35,7 +35,7 @@ fn process_instruction_nostd(
 ) -> ProgramResult {
     // We lazily check 2/3 of last 3 here since they may be needed
     // in the proceeding instructions.
-    // This makes the validation only happen once.
+    // This memoization makes the validation only happen once.
     // The payer will be checked by any system_program cpis that need to be
     // performed.
     //
