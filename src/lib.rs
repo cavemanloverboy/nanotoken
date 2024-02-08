@@ -29,14 +29,10 @@ entrypoint_nostd4!(process_instruction_nostd, 64);
 solana_program::custom_heap_default!();
 
 fn process_instruction_nostd(
-    program_id: &Pubkey,
+    _program_id: &Pubkey,
     accounts: &[NoStdAccountInfo4],
     data: &[u8],
 ) -> ProgramResult {
-    if *program_id != ID {
-        return Err(ProgramError::IncorrectProgramId);
-    }
-
     // We lazily check 2/3 of last 3 here since they may be needed
     // in the proceeding instructions.
     // This makes the validation only happen once.
