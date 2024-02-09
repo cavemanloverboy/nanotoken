@@ -65,8 +65,10 @@ pub fn transfer(
     }
 
     // Load from_account
-    let (from_owner, from_balance) = unsafe { TokenAccount::check_disc(from)? };
-    let (_to_owner, to_balance) = unsafe { TokenAccount::check_disc(to)? };
+    let (from_owner, from_mint, from_balance) =
+        unsafe { TokenAccount::check_disc(from)? };
+    let (_to_owner, to_mint, to_balance) =
+        unsafe { TokenAccount::check_disc(to)? };
 
     // Check from_account balance
     if unsafe { *from_balance } < args.amount {
@@ -83,6 +85,12 @@ pub fn transfer(
     {
         log::sol_log("incorrect from_account owner");
         return Err(ProgramError::IllegalOwner);
+    }
+
+    // Check that the mints match
+    if from_mint != to_mint {
+        log::sol_log("transfer: from/to mint mismatch");
+        return Err(NanoTokenError::IncorrectMint.into());
     }
 
     // Transfer

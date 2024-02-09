@@ -349,7 +349,7 @@ impl TokenAccount {
 
     pub unsafe fn check_disc(
         token_account: &NoStdAccountInfo4,
-    ) -> Result<(&Pubkey, *mut u64), ProgramError> {
+    ) -> Result<(&Pubkey, u64, *mut u64), ProgramError> {
         // Unpack and split data into discriminator &token_account
         let (disc, token_account_bytes) = token_account
             .unchecked_borrow_data()
@@ -364,7 +364,11 @@ impl TokenAccount {
         let account =
             unsafe { &*(token_account_bytes.as_ptr() as *const TokenAccount) };
 
-        Ok((&account.owner, &account.balance as *const u64 as *mut u64))
+        Ok((
+            &account.owner,
+            account.mint,
+            &account.balance as *const u64 as *mut u64,
+        ))
     }
 }
 
