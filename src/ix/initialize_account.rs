@@ -16,7 +16,8 @@ use crate::{
 pub struct InitializeAccountArgs {
     pub owner: Pubkey,
     pub mint: u64,
-    // 8 byte alignment.
+    // 8 byte alignment for good devex, otherwise need repr(packed) + unaligned reads/writes.
+    //
     // This is provided as an argument to provide the option to do it off
     // chain. Otherwise, if we do it on-chain via a syscall, it will always
     // be done. The cpi client will abstract this away and do it internally
@@ -71,7 +72,9 @@ pub fn initialize_account(
         config,
         token_account,
         system_program,
-        args,
+        &args.owner,
+        args.mint,
+        args.bump as u8,
     )?;
 
     Ok(1)
@@ -89,12 +92,15 @@ pub fn initialize_account(
 /// /// Note: owner check is done by the runtime after we validate data change.
 /// If we validate uninitialized disc, write initialized disc, and then
 /// the runtime complains, then we were not the account owner.
-fn checked_initialize_account(
+pub(crate) fn checked_initialize_account(
     payer: &NoStdAccountInfo4,
     config: &NoStdAccountInfo4,
     token_account: &NoStdAccountInfo4,
     system_program: &NoStdAccountInfo4,
-    args: &InitializeAccountArgs,
+    // args: &InitializeAccountArgs,
+    account_owner: &Pubkey,
+    account_mint: u64,
+    bump: u8,
 ) -> ProgramResult {
     // Check 1) Check seeds (valid index + checked by initialization)
     let mint_index: [u8; 8] = {
@@ -104,15 +110,15 @@ fn checked_initialize_account(
 
         // If the mint provided is not than the current mint_index, this is a
         // valid mint
-        if args.mint >= config_account.mint_index {
+        if account_mint >= config_account.mint_index {
             log::sol_log("mint u64 provided for initialization is not valid");
             return Err(ProgramError::InvalidInstructionData);
         }
 
-        args.mint.to_le_bytes()
+        account_mint.to_le_bytes()
     };
     let token_account_seeds: &[&[u8]] =
-        &[args.owner.as_ref(), mint_index.as_ref(), &[args.bump as u8]];
+        &[account_owner.as_ref(), mint_index.as_ref(), &[bump]];
 
     // Init 1) Create token account
     create_pda_funded_by_payer(
@@ -142,7 +148,7 @@ fn checked_initialize_account(
             mint,
             balance,
         } = &mut *(token_account_data.as_mut_ptr() as *mut TokenAccount);
-        *owner = args.owner;
+        *owner = *account_owner;
         // SAFETY: little endian byte memcpy. alignment is correct due to
         // TokenAccount.
         *(mint as *mut u64 as *mut [u8; 8]) = mint_index;

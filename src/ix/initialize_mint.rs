@@ -58,7 +58,7 @@ pub fn initialize_mint(
         return Err(ProgramError::NotEnoughAccountKeys);
     };
 
-    checked_initialized_mint(config, mint, args)?;
+    checked_initialized_mint(config, mint, &args.authority, &args.decimals)?;
 
     Ok(1)
 }
@@ -74,14 +74,15 @@ pub fn initialize_mint(
 /// /// Note: owner check is done by the runtime after we validate data change.
 /// If we validate uninitialized disc, write initialized disc, and then
 /// the runtime complains, then we were not the account owner.
-fn checked_initialized_mint(
+pub(crate) fn checked_initialized_mint(
     config: &NoStdAccountInfo4,
     mint: &NoStdAccountInfo4,
-    args: &InitializeMintArgs,
+    mint_authority: &Pubkey,
+    mint_decimals: &u64,
 ) -> ProgramResult {
     // Get account data
     // SAFETY: this is the one and only time any account data is mutably
-    // borrowed         in this instruction
+    // borrowed in this instruction
     let mint_account_data = unsafe { mint.unchecked_borrow_mut_data() };
 
     // Check 1) Expecting a particular data length
@@ -124,6 +125,8 @@ fn checked_initialized_mint(
         // This deconstruction pattern future proofs initialization for new
         // fields SAFETY: due to 8 byte disc and bpf alignment, size and
         // 8-byte alignment of bytes is checked
+        //
+        // Initial supply is zero.
         const _: () = assert!(core::mem::align_of::<Mint>() == 8);
         let Mint {
             authority,
@@ -133,13 +136,13 @@ fn checked_initialized_mint(
             _padding,
         } = &mut *(config_data.as_mut_ptr() as *mut Mint);
         *mint_index = this_mint_index;
-        *authority = args.authority;
+        *authority = *mint_authority;
         *supply = 0;
-        if args.decimals > 12 {
+        if *mint_decimals > 12 {
             log::sol_log("max decimals is 12");
             return Err(NanoTokenError::InvalidDecimals.into());
         }
-        *decimals = args.decimals as u8;
+        *decimals = *mint_decimals as u8;
     }
 
     Ok(())
