@@ -30,6 +30,8 @@ impl InitializeMintArgs {
             // instead of panicking.
             let (ix_data, rem) = unsafe { split_at_unchecked(data, IX_LEN) };
             *data = rem;
+
+            // This is always aligned and all bit patterns are valid
             Ok(unsafe { &*(ix_data.as_ptr() as *const InitializeMintArgs) })
         } else {
             Err(ProgramError::InvalidInstructionData)
