@@ -176,3 +176,12 @@ pub unsafe fn split_at_mut_unchecked<T>(
 // pub(crate) fn pubkey_neq(a: &Pubkey, b: &Pubkey) -> bool {
 //     solana_program::program_memory::sol_memcmp(a.as_ref(), b.as_ref(), 32) !=
 // 0 }
+
+#[macro_export]
+macro_rules! nanolog {
+    ($str:literal) => {
+        if cfg!(feature = "nanolog") {
+            solana_program::log::sol_log($str);
+        }
+    };
+}

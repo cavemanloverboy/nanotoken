@@ -9,6 +9,7 @@ crate-type = ["cdylib", "lib"]
 [features]
 default = []
 no-entrypoint = []
+nanolog = []
 
 [dependencies]
 solana-nostd-entrypoint = { version = "0.1.0", path = "../solana-entrypoint" }
