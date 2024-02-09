@@ -1,4 +1,3 @@
-use arrayref::mut_array_refs;
 use solana_nostd_entrypoint::{AccountInfoC, InstructionC};
 use solana_program::{
     entrypoint::ProgramResult, log, program_error::ProgramError,
@@ -22,16 +21,35 @@ pub fn create_pda_funded_by_payer(
 
     // Initialize ix: data
     let mut create_account_ix_data: [u8; 52] = [0; 4 + 8 + 8 + 32];
-    let (_disc_bytes, lamport_bytes, space_bytes, owner_bytes) =
-        mut_array_refs![&mut create_account_ix_data, 4, 8, 8, 32];
-    // Enum discriminator is 0 so we don't need to write anything
-    // *_disc_bytes = [0, 0, 0, 0];
-    // Write rent cost in lamports as u64 le bytes
-    *lamport_bytes = rent_due.to_le_bytes();
-    // Write space in bytes as u64 le bytes
-    *space_bytes = space.to_le_bytes();
-    // Write owner pubkey bytes
-    *owner_bytes = owner.to_bytes();
+    // Enum discriminator is 0 so we don't need to write anything to first 4 bytes
+    unsafe {
+        // Write rent cost in lamports as u64 le bytes
+        core::ptr::copy_nonoverlapping(
+            &rent_due as *const u64 as *const u8,
+            create_account_ix_data
+                .as_mut_ptr()
+                .add(4),
+            8,
+        );
+
+        // Write space in bytes as u64 le bytes
+        core::ptr::copy_nonoverlapping(
+            &space as *const u64 as *const u8,
+            create_account_ix_data
+                .as_mut_ptr()
+                .add(12),
+            8,
+        );
+
+        // Write owner pubkey bytes
+        core::ptr::copy_nonoverlapping(
+            owner.as_ref().as_ptr(),
+            create_account_ix_data
+                .as_mut_ptr()
+                .add(20),
+            32,
+        );
+    }
 
     // Instruction accounts: from, to
     let instruction_accounts =

@@ -14,7 +14,6 @@ no-entrypoint = []
 solana-nostd-entrypoint = { version = "0.1.0", path = "../solana-entrypoint" }
 solana-program = "1.17.16"
 bytemuck = { version = "1.14.1", features = ["align_offset", "derive"] }
-arrayref = "0.3.7"
 strum = { version = "0.26.1", default-features = false, features = ["derive"] }
 
 [dev-dependencies]
