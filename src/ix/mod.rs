@@ -1,3 +1,8 @@
+use solana_program::program_error::ProgramError;
+use strum::EnumDiscriminants;
+
+use crate::utils::split_at_unchecked;
+
 pub mod init_config;
 
 pub use init_config::*;
@@ -14,12 +19,14 @@ pub use mint::*;
 pub mod burn;
 pub use burn::*;
 
-pub mod transfer;
-use solana_program::program_error::ProgramError;
-use strum::EnumDiscriminants;
 pub use transfer::*;
+pub mod transfer;
 
-use crate::utils::split_at_unchecked;
+pub mod init_vault;
+pub use init_vault::*;
+
+pub use transmute::*;
+pub mod transmute;
 
 #[derive(PartialEq, Debug, Clone, Copy, EnumDiscriminants)]
 #[strum_discriminants(name(Tag))]
@@ -27,11 +34,14 @@ use crate::utils::split_at_unchecked;
 pub enum ProgramInstruction {
     /// This should run only once at the beginning of the program
     InitializeConfig(InitConfigArgs),
+
     InitializeMint(InitializeMintArgs),
     InitializeAccount(InitializeAccountArgs),
+    InitializeVault(InitializeVaultArgs),
     Mint(MintArgs),
     Burn(BurnArgs),
-    Transfer(Transfer),
+    Transfer(TransferArgs),
+    Transmute(TransmuteArgs),
 }
 
 impl Tag {
@@ -40,14 +50,16 @@ impl Tag {
     }
 }
 
-#[repr(u8)]
+#[repr(u64)]
 pub(crate) enum ProgramInstructionRef<'a> {
     InitializeConfig(&'a InitConfigArgs),
     InitializeAccount(&'a InitializeAccountArgs),
     InitializeMint(&'a InitializeMintArgs),
+    InitializeVault(&'a InitializeVaultArgs),
     Mint(&'a MintArgs),
     Burn(&'a BurnArgs),
-    Transfer(&'a Transfer),
+    Transfer(&'a TransferArgs),
+    Transmute(&'a TransmuteArgs),
 }
 
 pub(crate) struct InstructionIter<'a> {
@@ -90,6 +102,11 @@ impl<'a> Iterator for InstructionIter<'a> {
                     .map(ProgramInstructionRef::InitializeAccount),
             ),
 
+            x if x == Tag::InitializeVault as u8 => Some(
+                InitializeVaultArgs::from_data(&mut self.data)
+                    .map(ProgramInstructionRef::InitializeVault),
+            ),
+
             x if x == Tag::Mint as u8 => Some(
                 MintArgs::from_data(&mut self.data)
                     .map(ProgramInstructionRef::Mint),
@@ -101,8 +118,13 @@ impl<'a> Iterator for InstructionIter<'a> {
             ),
 
             x if x == Tag::Transfer as u8 => Some(
-                Transfer::from_data(&mut self.data)
+                TransferArgs::from_data(&mut self.data)
                     .map(ProgramInstructionRef::Transfer),
+            ),
+
+            x if x == Tag::Transmute as u8 => Some(
+                TransmuteArgs::from_data(&mut self.data)
+                    .map(ProgramInstructionRef::Transmute),
             ),
 
             _ => None,

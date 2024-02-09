@@ -112,6 +112,11 @@ fn process_instruction_nostd(
                 sys_program_validator()?;
                 initialize_account(ix_accounts, args)
             }
+            Ix::InitializeVault(args) => {
+                config_validator()?;
+                sys_program_validator()?;
+                initialize_vault(ix_accounts, args)
+            }
             Ix::Mint(args) => {
                 // don't need to validate config or sys program
                 mint(ix_accounts, args)
@@ -123,6 +128,11 @@ fn process_instruction_nostd(
             Ix::Transfer(args) => {
                 // don't need to validate config or sys program
                 transfer(ix_accounts, args)
+            }
+            Ix::Transmute(args) => {
+                config_validator()?;
+                sys_program_validator()?;
+                transmute(ix_accounts, args)
             }
         }?;
     }
