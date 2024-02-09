@@ -4,6 +4,8 @@ use solana_program::{
     pubkey::Pubkey, rent::Rent, sysvar::Sysvar,
 };
 
+pub mod spl_token_utils;
+
 /// Creates a new pda
 #[inline(always)]
 pub fn create_pda_funded_by_payer(
