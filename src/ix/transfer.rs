@@ -6,15 +6,16 @@ use crate::{error::NanoTokenError, utils::split_at_unchecked, TokenAccount};
 
 #[derive(PartialEq, Debug, Clone, Copy, Pod, Zeroable)]
 #[repr(C)]
-pub struct Transfer {
+pub struct TransferArgs {
     pub amount: u64,
 }
 
-impl Transfer {
+impl TransferArgs {
+    #[inline(always)]
     pub fn from_data<'a>(
         data: &mut &'a [u8],
-    ) -> Result<&'a Transfer, ProgramError> {
-        const IX_LEN: usize = core::mem::size_of::<Transfer>();
+    ) -> Result<&'a TransferArgs, ProgramError> {
+        const IX_LEN: usize = core::mem::size_of::<TransferArgs>();
         if data.len() >= IX_LEN {
             // SAFETY:
             // We do the length check ourselves instead of via
@@ -22,13 +23,15 @@ impl Transfer {
             // instead of panicking.
             let (ix_data, rem) = unsafe { split_at_unchecked(data, IX_LEN) };
             *data = rem;
-            Ok(bytemuck::try_from_bytes(ix_data)
-                .map_err(|_| ProgramError::InvalidInstructionData)?)
+
+            // This is always aligned and all bit patterns are valid
+            Ok(unsafe { &*(ix_data.as_ptr() as *const TransferArgs) })
         } else {
             Err(ProgramError::InvalidInstructionData)
         }
     }
 
+    #[inline(always)]
     pub fn size() -> usize {
         core::mem::size_of::<Self>()
     }
@@ -36,16 +39,16 @@ impl Transfer {
 
 pub fn transfer(
     accounts: &[NoStdAccountInfo4],
-    args: &Transfer,
+    args: &TransferArgs,
 ) -> Result<usize, ProgramError> {
     // log::sol_log("transfer");
+    // TODO DOCS
     let [from, to, owner, _rem @ ..] = accounts else {
         log::sol_log("transfer expecting [from, to, owner, .. ]");
         return Err(ProgramError::NotEnoughAccountKeys);
     };
 
     // Return early if transfering zero
-    // this seems to cost 0 cus?
     //
     // This is necessary!
     // It is extremely cheap implicit owner check for from/to in nontrivial from

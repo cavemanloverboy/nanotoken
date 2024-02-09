@@ -293,12 +293,13 @@ async fn end_to_end() -> Result<(), Box<dyn Error>> {
         .unwrap();
 
     // transfer
-    let mut ix_data = vec![0; 8 + Transfer::size()];
+    let mut ix_data = vec![0; 8 + TransferArgs::size()];
     {
         ix_data[0..8].copy_from_slice(&(Tag::Transfer as u64).to_le_bytes());
-        let Transfer { amount } =
-            bytemuck::try_from_bytes_mut(&mut ix_data[8..8 + Transfer::size()])
-                .unwrap();
+        let TransferArgs { amount } = bytemuck::try_from_bytes_mut(
+            &mut ix_data[8..8 + TransferArgs::size()],
+        )
+        .unwrap();
         *amount = 5;
     }
     let accounts = vec![
@@ -332,14 +333,15 @@ async fn end_to_end() -> Result<(), Box<dyn Error>> {
 
     // multi-transfer
     let num_transfers = 2;
-    let mut ix_data = vec![0; num_transfers * (8 + Transfer::size())];
+    let mut ix_data = vec![0; num_transfers * (8 + TransferArgs::size())];
     let mut accounts = vec![];
     for n in 0..num_transfers {
-        let disc_offset = 8 * n + n * Transfer::size();
+        let disc_offset = 8 * n + n * TransferArgs::size();
         ix_data[disc_offset..8 + disc_offset]
             .copy_from_slice(&(Tag::Transfer as u64).to_le_bytes());
-        let Transfer { amount } = bytemuck::try_from_bytes_mut(
-            &mut ix_data[disc_offset + 8..disc_offset + 8 + Transfer::size()],
+        let TransferArgs { amount } = bytemuck::try_from_bytes_mut(
+            &mut ix_data
+                [disc_offset + 8..disc_offset + 8 + TransferArgs::size()],
         )
         .unwrap();
         *amount = 1;
