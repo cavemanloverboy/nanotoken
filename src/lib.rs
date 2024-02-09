@@ -191,6 +191,7 @@ pub enum AccountDiscriminator {
     Config,
     Mint,
     Token,
+    VaultInfo,
 }
 
 #[derive(Debug, Clone, PartialEq, PartialOrd, Copy, Pod, Zeroable)]
@@ -354,5 +355,61 @@ impl TokenAccount {
             unsafe { &*(token_account_bytes.as_ptr() as *const TokenAccount) };
 
         Ok((&account.owner, &account.balance as *const u64 as *mut u64))
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, PartialOrd, Copy, Pod, Zeroable)]
+#[repr(C)]
+pub struct VaultInfo {
+    tokenkeg_mint: Pubkey,
+    tokenkeg_vault: Pubkey,
+    nanotoken_mint: Pubkey,
+}
+
+impl VaultInfo {
+    pub fn space() -> usize {
+        8 + core::mem::size_of::<Self>()
+    }
+
+    pub fn info(tokenkeg_mint: &Pubkey) -> (Pubkey, u8) {
+        Pubkey::find_program_address(
+            &[b"info", tokenkeg_mint.as_ref()],
+            &crate::ID,
+        )
+    }
+
+    pub fn vault(tokenkeg_mint: &Pubkey) -> (Pubkey, u8) {
+        Pubkey::find_program_address(
+            &[b"vault", tokenkeg_mint.as_ref()],
+            &crate::ID,
+        )
+    }
+
+    /// Discriminator and owner checks are performed.
+    pub(crate) fn checked_load<'a>(
+        vault_info_data: &'a [u8],
+        owner: &Pubkey,
+    ) -> Result<&'a VaultInfo, ProgramError> {
+        // Unpack and split data into discriminator & token_account
+        let (disc, vault_info_bytes) = vault_info_data.split_at(8);
+
+        // We only need to check the first byte
+        if disc[0] != AccountDiscriminator::VaultInfo as u8 {
+            log::sol_log("vault_info discriminator is incorrect");
+            return Err(ProgramError::InvalidAccountData);
+        }
+
+        // Check account owner
+        if solana_program::program_memory::sol_memcmp(
+            owner.as_ref(),
+            crate::ID.as_ref(),
+            32,
+        ) != 0
+        {
+            log::sol_log("vault_info has incorrect owner");
+            return Err(ProgramError::IllegalOwner);
+        }
+
+        Ok(unsafe { &*(vault_info_bytes.as_ptr() as *const VaultInfo) })
     }
 }
