@@ -339,7 +339,7 @@ impl TokenAccount {
     pub unsafe fn check_disc(
         token_account: &NoStdAccountInfo4,
     ) -> Result<(&Pubkey, *mut u64), ProgramError> {
-        // Unpack and split data into discriminator & token_account
+        // Unpack and split data into discriminator &token_account
         let (disc, token_account_bytes) = token_account
             .unchecked_borrow_data()
             .split_at(8);
