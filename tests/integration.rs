@@ -3,7 +3,9 @@
 use std::{env, error::Error, path::Path};
 
 use nanotoken::{
-    ix::{InitializeAccountArgs, InitializeMintArgs, MintArgs, Tag, Transfer},
+    ix::{
+        InitializeAccountArgs, InitializeMintArgs, MintArgs, Tag, TransferArgs,
+    },
     Mint, ProgramConfig, TokenAccount,
 };
 use solana_program::{
