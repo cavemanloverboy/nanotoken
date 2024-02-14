@@ -1,4 +1,4 @@
-use solana_nostd_entrypoint::{entrypoint_nostd4::Ref, NoStdAccountInfo4};
+use solana_nostd_entrypoint::{entrypoint_nostd::Ref, NoStdAccountInfo4};
 use solana_program::{
     log, program_error::ProgramError, program_option::COption, pubkey::Pubkey,
 };

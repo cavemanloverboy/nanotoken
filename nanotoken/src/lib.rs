@@ -3,7 +3,7 @@
 use bytemuck::{Pod, Zeroable};
 use consts::CONFIG_ACCOUNT;
 use solana_nostd_entrypoint::{
-    entrypoint_nostd4,
+    entrypoint_nostd,
     solana_program::{
         self, declare_id, entrypoint::ProgramResult,
         program_error::ProgramError, pubkey::Pubkey,
