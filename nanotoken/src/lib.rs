@@ -23,7 +23,7 @@ pub mod error;
 declare_id!("GigabithNd6HmU4nRFPHXAkBK9nAtvNuHnSavWi3G7Zj");
 
 #[cfg(not(feature = "no-entrypoint"))]
-entrypoint_nostd4!(process_instruction_nostd, 64);
+entrypoint_nostd!(process_instruction_nostd, 64);
 
 pub mod allocator {
     pub struct NoAlloc;
