@@ -20,7 +20,7 @@ pub(crate) mod utils;
 
 pub mod error;
 
-declare_id!("3b6uBdvZTZUoqoeLpiLg83Fw1fpUz52FZBjstSXwkNXp");
+declare_id!("GigabithNd6HmU4nRFPHXAkBK9nAtvNuHnSavWi3G7Zj");
 
 #[cfg(not(feature = "no-entrypoint"))]
 entrypoint_nostd4!(process_instruction_nostd, 64);
