@@ -63,67 +63,6 @@ async fn end_to_end() -> Result<(), Box<dyn Error>> {
         .await
         .unwrap();
 
-    // // Create lookup table
-    // let buses: Vec<Pubkey> = (0..30)
-    //     .map(|n| DataBus::address(n))
-    //     .chain((0..32).map(|n| TokenBus::address(n)))
-    //     .collect();
-    // let (init_lookup_table, alt_address) =
-    //     solana_sdk::address_lookup_table::instruction::create_lookup_table(
-    //         ctx.payer.pubkey(),
-    //         ctx.payer.pubkey(),
-    //         0,
-    //     );
-    // let transaction = Transaction::new_signed_with_payer(
-    //     &[init_lookup_table],
-    //     Some(&ctx.payer.pubkey()),
-    //     &[&ctx.payer],
-    //     ctx.last_blockhash,
-    // );
-    // ctx.banks_client
-    //     .process_transaction(transaction)
-    //     .await
-    //     .unwrap();
-    // for chunk in buses.chunks(10) {
-    //     let extend =
-    // solana_sdk::address_lookup_table::instruction::extend_lookup_table(
-    //         alt_address,
-    //         ctx.payer.pubkey(),
-    //         Some(ctx.payer.pubkey()),
-    //         chunk.to_vec(),
-    //     );
-    //     let transaction = Transaction::new_signed_with_payer(
-    //         &[extend],
-    //         Some(&ctx.payer.pubkey()),
-    //         &[&ctx.payer],
-    //         ctx.last_blockhash,
-    //     );
-    //     ctx.banks_client
-    //         .process_transaction(transaction)
-    //         .await
-    //         .unwrap();
-    // }
-    // let finalize =
-    // solana_sdk::address_lookup_table::instruction::freeze_lookup_table(
-    //     alt_address,
-    //     ctx.payer.pubkey(),
-    // );
-    // let transaction = Transaction::new_signed_with_payer(
-    //     &[finalize],
-    //     Some(&ctx.payer.pubkey()),
-    //     &[&ctx.payer],
-    //     ctx.last_blockhash,
-    // );
-    // ctx.banks_client
-    //     .process_transaction(transaction)
-    //     .await
-    //     .unwrap();
-    // ctx.warp_to_slot(8)?;
-    // let alt = AddressLookupTableAccount {
-    //     key: alt_address,
-    //     addresses: buses,
-    // };
-
     // Initialize config
     let ix_data = (Tag::InitializeConfig as u64)
         .to_le_bytes()
