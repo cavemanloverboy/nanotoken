@@ -25,8 +25,23 @@ declare_id!("3b6uBdvZTZUoqoeLpiLg83Fw1fpUz52FZBjstSXwkNXp");
 #[cfg(not(feature = "no-entrypoint"))]
 entrypoint_nostd4!(process_instruction_nostd, 64);
 
-// for any code that does happen to allocate... we want a bump alloc
-solana_program::custom_heap_default!();
+pub mod allocator {
+    pub struct NoAlloc;
+    extern crate alloc;
+    #[allow(clippy::arithmetic_side_effects)]
+    unsafe impl alloc::alloc::GlobalAlloc for NoAlloc {
+        #[inline]
+        unsafe fn alloc(&self, _: core::alloc::Layout) -> *mut u8 {
+            panic!("no_alloc");
+        }
+        #[inline]
+        unsafe fn dealloc(&self, _: *mut u8, _: core::alloc::Layout) {}
+    }
+}
+
+#[cfg(target_os = "solana")]
+#[global_allocator]
+static A: allocator::NoAlloc = allocator::NoAlloc;
 
 fn process_instruction_nostd(
     _program_id: &Pubkey,
