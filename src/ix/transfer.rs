@@ -89,7 +89,7 @@ pub fn transfer(
 
     // Check that the mints match
     if from_mint != to_mint {
-        log::sol_log("transfer: from/to mint mismatch");
+        log::sol_log("from/to mint mismatch");
         return Err(NanoTokenError::IncorrectMint.into());
     }
 
