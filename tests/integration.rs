@@ -30,7 +30,10 @@ async fn end_to_end() -> Result<(), Box<dyn Error>> {
 
     // Initialize config
     let config_keypair = read_keypair_file(
-        Path::new(&env::var("CARGO_MANIFEST_DIR").unwrap()).join("config.json"),
+        Path::new(&env::var("CARGO_MANIFEST_DIR").unwrap())
+            .parent()
+            .unwrap()
+            .join("config.json"),
     )
     .unwrap();
     let config = config_keypair.pubkey();
