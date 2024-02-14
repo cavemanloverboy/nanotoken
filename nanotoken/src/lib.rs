@@ -28,20 +28,19 @@ entrypoint_nostd!(process_instruction_nostd, 64);
 pub mod allocator {
     pub struct NoAlloc;
     extern crate alloc;
-    #[allow(clippy::arithmetic_side_effects)]
     unsafe impl alloc::alloc::GlobalAlloc for NoAlloc {
         #[inline]
         unsafe fn alloc(&self, _: core::alloc::Layout) -> *mut u8 {
-            panic!("no_alloc");
+            panic!("no_alloc :)");
         }
         #[inline]
         unsafe fn dealloc(&self, _: *mut u8, _: core::alloc::Layout) {}
     }
-}
 
-#[cfg(target_os = "solana")]
-#[global_allocator]
-static A: allocator::NoAlloc = allocator::NoAlloc;
+    #[cfg(target_os = "solana")]
+    #[global_allocator]
+    static A: NoAlloc = NoAlloc;
+}
 
 fn process_instruction_nostd(
     _program_id: &Pubkey,
