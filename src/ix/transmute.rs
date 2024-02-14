@@ -61,7 +61,7 @@ pub fn transmute(
     // This is necessary!
     // It is extremely cheap implicit owner check for from/to in nontrivial from
     // != to case. In the trivial from == to case, it doesn't matter since
-    // nothing is Transmutered
+    // nothing is transmuted
     if args.amount == 0 {
         return Ok(8);
     }
