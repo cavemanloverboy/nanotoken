@@ -50,7 +50,6 @@ pub fn initialize_vault(
     args: &InitializeVaultArgs,
 ) -> Result<usize, ProgramError> {
     // TODO DOCS AND VALIDATION
-    // log::sol_log("init account");
     // Unpack accounts
     //
     // 1) tokenkeg_mint will be checked by create_token_account
@@ -150,6 +149,9 @@ fn create_vault_info(
             vault_info_account_data.add(72),
             32,
         );
+
+        // Write info bump
+        *vault_info_account_data.add(104) = info_bump;
     };
     Ok(())
 }

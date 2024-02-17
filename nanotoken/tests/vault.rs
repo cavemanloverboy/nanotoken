@@ -39,7 +39,10 @@ async fn round_trip() -> Result<(), Box<dyn Error>> {
 
     // Initialize config
     let config_keypair = read_keypair_file(
-        Path::new(&env::var("CARGO_MANIFEST_DIR").unwrap()).join("config.json"),
+        Path::new(&env::var("CARGO_MANIFEST_DIR").unwrap())
+            .parent()
+            .unwrap()
+            .join("config.json"),
     )
     .unwrap();
     let config = config_keypair.pubkey();
@@ -136,7 +139,7 @@ async fn round_trip() -> Result<(), Box<dyn Error>> {
         .process_transaction(transaction)
         .await?;
 
-    // pre-4: fund a second user
+    // pre-3: fund a second user
     let second_user = Keypair::new();
     let fund_user_tx = system_transaction::transfer(
         &ctx.payer,
@@ -148,7 +151,7 @@ async fn round_trip() -> Result<(), Box<dyn Error>> {
         .process_transaction(fund_user_tx)
         .await?;
 
-    // 4. Create nanotoken vault, nanotoken accounts, and port over
+    // 3. Create nanotoken vault, nanotoken accounts, and port over
     let (vault, vault_bump) = VaultInfo::vault(&tokenkeg_mint.pubkey());
     let (info, info_bump) = VaultInfo::info(&tokenkeg_mint.pubkey());
     let mut step_4_data = vec![
@@ -212,14 +215,14 @@ async fn round_trip() -> Result<(), Box<dyn Error>> {
         AccountMeta::new(nanotoken_account_2, false),
         // transmute
         // from, to, owner, tokenkeg_mint, nanotoken_mint, vault_info, tokenkeg_vault, tokenkeg_program
-        dbg!(AccountMeta::new(tokenkeg_account.pubkey(), false)),
-        dbg!(AccountMeta::new(nanotoken_account_1, false)),
-        dbg!(AccountMeta::new(ctx.payer.pubkey(), true)),
-        dbg!(AccountMeta::new(tokenkeg_mint.pubkey(), false)),
-        dbg!(AccountMeta::new(nanotoken_mint.pubkey(), false)),
-        dbg!(AccountMeta::new_readonly(info, false)),
-        dbg!(AccountMeta::new(vault, false)),
-        dbg!(AccountMeta::new_readonly(spl_token::ID, false)),
+        AccountMeta::new(tokenkeg_account.pubkey(), false),
+        AccountMeta::new(nanotoken_account_1, false),
+        AccountMeta::new(ctx.payer.pubkey(), true),
+        AccountMeta::new(tokenkeg_mint.pubkey(), false),
+        AccountMeta::new(nanotoken_mint.pubkey(), false),
+        AccountMeta::new_readonly(info, false),
+        AccountMeta::new(vault, false),
+        AccountMeta::new_readonly(spl_token::ID, false),
         // config
         AccountMeta::new(config, false),
         AccountMeta::new_readonly(system_program::ID, false),
@@ -249,16 +252,21 @@ async fn round_trip() -> Result<(), Box<dyn Error>> {
     );
     ctx.banks_client
         .process_transaction(transaction)
-        .await?;
-    let post_token_balance = spl_token::state::Account::unpack(
-        &ctx.banks_client
-            .get_account(tokenkeg_account.pubkey())
-            .await?
+        .await
+        .unwrap();
+    let onchain_tokenkeg_account = ctx
+        .banks_client
+        .get_account(tokenkeg_account.pubkey())
+        .await?
+        .unwrap();
+    let post_token_balance =
+        spl_token::state::Account::unpack(&onchain_tokenkeg_account.data)
             .unwrap()
-            .data,
-    )
-    .unwrap()
-    .amount;
+            .amount;
+    println!(
+        "tokenkeg account owner = {}",
+        onchain_tokenkeg_account.owner
+    );
 
     let post_nanotoken_balance = u64::from_le_bytes(
         ctx.banks_client
@@ -306,12 +314,6 @@ async fn round_trip() -> Result<(), Box<dyn Error>> {
             ])
         }
     }
-    accounts.extend([
-        // remainder
-        AccountMeta::new(config, false),
-        AccountMeta::new_readonly(system_program::ID, false),
-        AccountMeta::new(ctx.payer.pubkey(), true),
-    ]);
     let instruction = Instruction {
         program_id: nanotoken::ID,
         accounts,
@@ -325,9 +327,44 @@ async fn round_trip() -> Result<(), Box<dyn Error>> {
     );
     ctx.banks_client
         .process_transaction(transaction)
-        .await?;
+        .await
+        .unwrap();
 
     // 6. port back over to Tokenkeg
+    let step_6_accounts = vec![
+        // transmute
+        // from, to, owner, tokenkeg_mint, nanotoken_mint, vault_info, tokenkeg_vault, tokenkeg_program, _rem @ .., config, system_program, payer
+        dbg!(AccountMeta::new(nanotoken_account_1, false)),
+        dbg!(AccountMeta::new(tokenkeg_account.pubkey(), false)),
+        dbg!(AccountMeta::new(ctx.payer.pubkey(), true)),
+        dbg!(AccountMeta::new(tokenkeg_mint.pubkey(), false)),
+        dbg!(AccountMeta::new(nanotoken_mint.pubkey(), false)),
+        dbg!(AccountMeta::new_readonly(info, false)),
+        dbg!(AccountMeta::new(vault, false)),
+        dbg!(AccountMeta::new_readonly(spl_token::ID, false)),
+        // config
+        AccountMeta::new(config, false),
+        AccountMeta::new_readonly(system_program::ID, false),
+        AccountMeta::new(ctx.payer.pubkey(), true),
+    ];
+    let mut step_6_data = vec![];
+    step_6_data.extend((Tag::Transmute as u64).to_le_bytes());
+    step_6_data.extend((10_u64).to_le_bytes());
+    let port_back = Instruction {
+        program_id: nanotoken::ID,
+        accounts: step_6_accounts,
+        data: step_6_data,
+    };
+    let transaction = Transaction::new_signed_with_payer(
+        &[port_back],
+        Some(&ctx.payer.pubkey()),
+        &[&ctx.payer],
+        ctx.last_blockhash,
+    );
+    ctx.banks_client
+        .process_transaction(transaction)
+        .await
+        .unwrap();
 
     Ok(())
 }

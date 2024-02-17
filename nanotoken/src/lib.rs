@@ -392,6 +392,7 @@ pub struct VaultInfo {
     tokenkeg_mint: Pubkey,
     tokenkeg_vault: Pubkey,
     nanotoken_mint: Pubkey,
+    info_bump: u8,
 }
 
 impl VaultInfo {
