@@ -11,10 +11,11 @@ use nanotoken::{
 use solana_program::{
     instruction::{AccountMeta, Instruction},
     native_token::LAMPORTS_PER_SOL,
+    pubkey::Pubkey,
     rent::Rent,
     system_program,
 };
-use solana_program_test::ProgramTest;
+use solana_program_test::{BanksClient, ProgramTest};
 use solana_sdk::{
     signature::{read_keypair_file, Keypair},
     signer::Signer,
@@ -181,6 +182,13 @@ async fn end_to_end() -> Result<(), Box<dyn Error>> {
         .await
         .unwrap();
 
+    // check state
+    let user_token_account =
+        get_nanotoken_account(&mut ctx.banks_client, token_account).await?;
+    assert_eq!(user_token_account.mint, 0);
+    assert_eq!(user_token_account.owner, ctx.payer.pubkey());
+    assert_eq!(user_token_account.balance, 1000);
+
     // Initialize a second token account
     // First fund a second user
     let second_user = Keypair::new();
@@ -251,10 +259,6 @@ async fn end_to_end() -> Result<(), Box<dyn Error>> {
         AccountMeta::new(token_account, false),
         AccountMeta::new(second_token_account, false),
         AccountMeta::new_readonly(ctx.payer.pubkey(), true),
-        // remainder
-        AccountMeta::new(config, false),
-        AccountMeta::new_readonly(system_program::ID, false),
-        AccountMeta::new(ctx.payer.pubkey(), true),
     ];
     let instruction = Instruction {
         program_id: nanotoken::ID,
@@ -274,6 +278,17 @@ async fn end_to_end() -> Result<(), Box<dyn Error>> {
         .process_transaction(transaction)
         .await
         .unwrap();
+
+    // check state (transfered 5 atoms)
+    let user_token_account =
+        get_nanotoken_account(&mut ctx.banks_client, token_account).await?;
+    assert_eq!(user_token_account.balance, 995);
+    let second_user_token_account =
+        get_nanotoken_account(&mut ctx.banks_client, second_token_account)
+            .await?;
+    assert_eq!(second_user_token_account.mint, 0);
+    assert_eq!(second_user_token_account.owner, second_user.pubkey());
+    assert_eq!(second_user_token_account.balance, 5);
 
     // multi-transfer
     let num_transfers = 2;
@@ -304,12 +319,6 @@ async fn end_to_end() -> Result<(), Box<dyn Error>> {
             ])
         }
     }
-    accounts.extend([
-        // remainder
-        AccountMeta::new(config, false),
-        AccountMeta::new_readonly(system_program::ID, false),
-        AccountMeta::new(ctx.payer.pubkey(), true),
-    ]);
     let instruction = Instruction {
         program_id: nanotoken::ID,
         accounts,
@@ -329,5 +338,36 @@ async fn end_to_end() -> Result<(), Box<dyn Error>> {
         .await
         .unwrap();
 
+    // Transfered equal amounts back and forth so same state
+    let user_token_account =
+        get_nanotoken_account(&mut ctx.banks_client, token_account).await?;
+    assert_eq!(user_token_account.balance, 995);
+    let second_user_token_account =
+        get_nanotoken_account(&mut ctx.banks_client, second_token_account)
+            .await?;
+    assert_eq!(second_user_token_account.balance, 5);
+
     Ok(())
+}
+
+pub async fn get_nanotoken_account(
+    client: &mut BanksClient,
+    key: Pubkey,
+) -> Result<TokenAccount, Box<dyn Error>> {
+    use core::mem::MaybeUninit;
+    let mut ta = MaybeUninit::uninit();
+    let account = client
+        .get_account(key)
+        .await?
+        .ok_or("could not find account")?;
+
+    unsafe {
+        core::ptr::copy_nonoverlapping(
+            account.data.as_ptr().add(8),
+            ta.as_mut_ptr() as *mut u8,
+            core::mem::size_of::<TokenAccount>(),
+        );
+
+        Ok(ta.assume_init())
+    }
 }
