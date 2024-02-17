@@ -337,11 +337,7 @@ impl TokenAccount {
         Ok(&mut *(token_account_bytes.as_mut_ptr() as *mut TokenAccount))
     }
 
-    /// SAFETY: unchecked refers to refcell checks, not to discriminator checks.
-    /// i.e. memory safety. You must ensure no one else has a view into config's
-    /// account data.
-    ///
-    /// Discriminator is still performed. This does not do an owner check!
+    /// Discriminator check. This does not do an owner check!
     /// If you call this function you MUST mutate the data to do an implicit
     /// owner check (should be mutated during e.g. mint, transfer)
     pub fn checked_load_mut<'a>(

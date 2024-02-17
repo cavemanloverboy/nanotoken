@@ -16,6 +16,7 @@ impl<'a> MintAccountInfo<'a> {
     pub fn new(
         info: &'a NoStdAccountInfo4,
     ) -> Result<MintAccountInfo<'a>, ProgramError> {
+        // TODO cmp
         if *info.owner() != SPL_TOKEN_PROGRAM {
             log::sol_log("Mint account must be owned by the Token Program");
             return Err(ProgramError::IllegalOwner);
@@ -170,6 +171,8 @@ pub mod token {
     use solana_nostd_entrypoint::NoStdAccountInfo4;
     use solana_program::{log, program_error::ProgramError, pubkey::Pubkey};
 
+    use crate::error::NanoTokenError;
+
     use super::SPL_TOKEN_PROGRAM;
 
     #[derive(Clone)]
@@ -180,76 +183,77 @@ pub mod token {
     pub const TOKENKEG_ACCOUNT_LEN: usize = 165;
 
     impl<'a> TokenAccountInfo<'a> {
-        pub unsafe fn new(
+        pub fn new(
             info: &'a NoStdAccountInfo4,
             mint: &Pubkey,
+            print: bool,
         ) -> Result<TokenAccountInfo<'a>, ProgramError> {
-            // if *info.owner() != SPL_TOKEN_PROGRAM
+            // Check account is owned by spl token program
             if solana_program::program_memory::sol_memcmp(
                 info.owner().as_ref(),
                 SPL_TOKEN_PROGRAM.as_ref(),
                 32,
             ) != 0
             {
-                log::sol_log(
-                    "Token account must be owned by the Token Program",
-                );
+                if print {
+                    log::sol_log(
+                        "Token account must be owned by the Token Program",
+                    );
+                }
                 return Err(ProgramError::IllegalOwner);
             }
-            if info.data_len() != TOKENKEG_ACCOUNT_LEN {
-                log::sol_log("Token account data length must be 165 bytes");
 
+            // Check account data is correct length
+            if info.data_len() != TOKENKEG_ACCOUNT_LEN {
+                if print {
+                    log::sol_log("Token account data length must be 165 bytes");
+                }
                 return Err(ProgramError::InvalidAccountData);
             }
+
+            // Check token mint is correct
             if solana_program::program_memory::sol_memcmp(
-                info.unchecked_borrow_data()
-                    .get_unchecked(0..32),
+                info.try_borrow_data()
+                    .ok_or(NanoTokenError::DuplicateAccount)?
+                    .get(0..32)
+                    .ok_or(ProgramError::AccountDataTooSmall)?,
                 mint.as_ref(),
                 32,
             ) != 0
             {
-                log::sol_log("Token account mint mismatch");
+                if print {
+                    log::sol_log("Token account mint mismatch");
+                }
                 return Err(ProgramError::InvalidAccountData);
             }
 
             Ok(Self { info })
         }
 
-        pub unsafe fn new_with_owner(
+        pub fn new_with_authority(
             info: &'a NoStdAccountInfo4,
             mint: &Pubkey,
-            owner: &Pubkey,
+            authority: &Pubkey,
+            print: bool,
         ) -> Result<TokenAccountInfo<'a>, ProgramError> {
-            let token_account_info = Self::new(info, mint)?;
+            let token_account_info = Self::new(info, mint, print)?;
+
+            // Check with authority
             if solana_program::program_memory::sol_memcmp(
-                info.unchecked_borrow_data()
-                    .get_unchecked(32..64),
-                owner.as_ref(),
+                info.try_borrow_data()
+                    .ok_or(NanoTokenError::DuplicateAccount)?
+                    .get(32..64)
+                    .ok_or(ProgramError::InvalidAccountData)?,
+                authority.as_ref(),
                 32,
             ) != 0
             {
-                log::sol_log("Token account owner mismatch");
+                if print {
+                    log::sol_log("Token account owner mismatch");
+                }
                 return Err(ProgramError::IllegalOwner);
             }
             Ok(token_account_info)
-        }
-
-        pub unsafe fn new_with_owner_and_key(
-            info: &'a NoStdAccountInfo4,
-            mint: &Pubkey,
-            owner: &Pubkey,
-            key: &Pubkey,
-        ) -> Result<TokenAccountInfo<'a>, ProgramError> {
-            if solana_program::program_memory::sol_memcmp(
-                info.key().as_ref(),
-                key.as_ref(),
-                32,
-            ) != 0
-            {
-                log::sol_log("Invalid pubkey for Token Account");
-                return Err(ProgramError::InvalidInstructionData);
-            }
-            Self::new_with_owner(info, mint, owner)
         }
     }
 }
