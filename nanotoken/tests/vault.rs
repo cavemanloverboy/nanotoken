@@ -267,6 +267,7 @@ async fn round_trip() -> Result<(), Box<dyn Error>> {
         "tokenkeg account owner = {}",
         onchain_tokenkeg_account.owner
     );
+    assert_eq!(post_token_balance, 999990);
 
     let post_nanotoken_balance = u64::from_le_bytes(
         ctx.banks_client
@@ -283,6 +284,7 @@ async fn round_trip() -> Result<(), Box<dyn Error>> {
     println!(
         "nanotoken account before/after transmute = 0/{post_nanotoken_balance}"
     );
+    assert_eq!(post_nanotoken_balance, 10);
 
     // 5. nanotoken transfer back and forth
     // multi-transfer
@@ -365,6 +367,39 @@ async fn round_trip() -> Result<(), Box<dyn Error>> {
         .process_transaction(transaction)
         .await
         .unwrap();
+
+    // Check balances
+    let onchain_tokenkeg_account = ctx
+        .banks_client
+        .get_account(tokenkeg_account.pubkey())
+        .await?
+        .unwrap();
+    let post_token_balance =
+        spl_token::state::Account::unpack(&onchain_tokenkeg_account.data)
+            .unwrap()
+            .amount;
+    println!(
+        "tokenkeg account owner = {}",
+        onchain_tokenkeg_account.owner
+    );
+
+    let post_nanotoken_balance = u64::from_le_bytes(
+        ctx.banks_client
+            .get_account(nanotoken_account_1)
+            .await?
+            .unwrap()
+            .data
+            .get(48..56)
+            .unwrap()
+            .try_into()
+            .unwrap(),
+    );
+    println!("tokenkeg account before/after transmute = {pre_token_balance}/{post_token_balance}");
+    println!(
+        "nanotoken account before/after transmute = 0/{post_nanotoken_balance}"
+    );
+    assert_eq!(post_token_balance, 1000000);
+    assert_eq!(post_nanotoken_balance, 0);
 
     Ok(())
 }
