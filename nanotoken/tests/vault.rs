@@ -334,14 +334,14 @@ async fn round_trip() -> Result<(), Box<dyn Error>> {
     let step_6_accounts = vec![
         // transmute
         // from, to, owner, tokenkeg_mint, nanotoken_mint, vault_info, tokenkeg_vault, tokenkeg_program, _rem @ .., config, system_program, payer
-        dbg!(AccountMeta::new(nanotoken_account_1, false)),
-        dbg!(AccountMeta::new(tokenkeg_account.pubkey(), false)),
-        dbg!(AccountMeta::new(ctx.payer.pubkey(), true)),
-        dbg!(AccountMeta::new(tokenkeg_mint.pubkey(), false)),
-        dbg!(AccountMeta::new(nanotoken_mint.pubkey(), false)),
-        dbg!(AccountMeta::new_readonly(info, false)),
-        dbg!(AccountMeta::new(vault, false)),
-        dbg!(AccountMeta::new_readonly(spl_token::ID, false)),
+        AccountMeta::new(nanotoken_account_1, false),
+        AccountMeta::new(tokenkeg_account.pubkey(), false),
+        AccountMeta::new(ctx.payer.pubkey(), true),
+        AccountMeta::new(tokenkeg_mint.pubkey(), false),
+        AccountMeta::new(nanotoken_mint.pubkey(), false),
+        AccountMeta::new_readonly(info, false),
+        AccountMeta::new(vault, false),
+        AccountMeta::new_readonly(spl_token::ID, false),
         // config
         AccountMeta::new(config, false),
         AccountMeta::new_readonly(system_program::ID, false),
