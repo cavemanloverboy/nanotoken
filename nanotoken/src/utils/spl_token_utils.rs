@@ -1,10 +1,10 @@
-use solana_nostd_entrypoint::{entrypoint_nostd::Ref, NoStdAccountInfo4};
+use crate::solana_nostd_entrypoint::{NoStdAccountInfo, Ref};
 use solana_program::{
     log, program_error::ProgramError, program_option::COption, pubkey::Pubkey,
 };
 
 pub struct MintAccountInfo<'a> {
-    pub info: &'a NoStdAccountInfo4,
+    pub info: &'a NoStdAccountInfo,
     pub data: Ref<'a, [u8]>,
     pub mint: &'a MintZC,
 }
@@ -14,7 +14,7 @@ pub const SPL_TOKEN_PROGRAM: Pubkey =
 
 impl<'a> MintAccountInfo<'a> {
     pub fn new(
-        info: &'a NoStdAccountInfo4,
+        info: &'a NoStdAccountInfo,
     ) -> Result<MintAccountInfo<'a>, ProgramError> {
         // TODO cmp
         if *info.owner() != SPL_TOKEN_PROGRAM {
@@ -88,7 +88,7 @@ unsafe fn check_copt_disc(ptr: *const u32) -> Option<usize> {
         // None or Some
         0 | 1 => Some(36),
 
-        _ => return None,
+        _ => None,
     }
 }
 
@@ -168,7 +168,7 @@ fn mint_zc() {
 }
 
 pub mod token {
-    use solana_nostd_entrypoint::NoStdAccountInfo4;
+    use crate::solana_nostd_entrypoint::NoStdAccountInfo;
     use solana_program::{log, program_error::ProgramError, pubkey::Pubkey};
 
     use crate::error::NanoTokenError;
@@ -177,14 +177,14 @@ pub mod token {
 
     #[derive(Clone)]
     pub struct TokenAccountInfo<'a> {
-        pub info: &'a NoStdAccountInfo4,
+        pub info: &'a NoStdAccountInfo,
     }
 
     pub const TOKENKEG_ACCOUNT_LEN: usize = 165;
 
     impl<'a> TokenAccountInfo<'a> {
         pub fn new(
-            info: &'a NoStdAccountInfo4,
+            info: &'a NoStdAccountInfo,
             mint: &Pubkey,
             print: bool,
         ) -> Result<TokenAccountInfo<'a>, ProgramError> {
@@ -231,7 +231,7 @@ pub mod token {
         }
 
         pub fn new_with_authority(
-            info: &'a NoStdAccountInfo4,
+            info: &'a NoStdAccountInfo,
             mint: &Pubkey,
             authority: &Pubkey,
             print: bool,

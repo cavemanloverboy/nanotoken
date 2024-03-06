@@ -1,5 +1,5 @@
+use crate::solana_nostd_entrypoint::NoStdAccountInfo;
 use bytemuck::{Pod, Zeroable};
-use solana_nostd_entrypoint::NoStdAccountInfo4;
 use solana_program::{
     entrypoint::ProgramResult, log, program_error::ProgramError, pubkey::Pubkey,
 };
@@ -50,7 +50,7 @@ impl InitializeAccountArgs {
 }
 
 pub fn initialize_account(
-    accounts: &[NoStdAccountInfo4],
+    accounts: &[NoStdAccountInfo],
     args: &InitializeAccountArgs,
 ) -> Result<usize, ProgramError> {
     // log::sol_log("init account");
@@ -93,10 +93,10 @@ pub fn initialize_account(
 /// If we validate uninitialized disc, write initialized disc, and then
 /// the runtime complains, then we were not the account owner.
 pub(crate) fn checked_initialize_account(
-    payer: &NoStdAccountInfo4,
-    config: &NoStdAccountInfo4,
-    token_account: &NoStdAccountInfo4,
-    system_program: &NoStdAccountInfo4,
+    payer: &NoStdAccountInfo,
+    config: &NoStdAccountInfo,
+    token_account: &NoStdAccountInfo,
+    system_program: &NoStdAccountInfo,
     // args: &InitializeAccountArgs,
     account_owner: &Pubkey,
     account_mint: u64,

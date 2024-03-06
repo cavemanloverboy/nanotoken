@@ -1,20 +1,16 @@
 #![no_std]
 
+use crate::solana_nostd_entrypoint::NoStdAccountInfo;
 use bytemuck::{Pod, Zeroable};
 use consts::CONFIG_ACCOUNT;
-use solana_nostd_entrypoint::{
-    entrypoint_nostd,
-    solana_program::{
-        self, declare_id, entrypoint::ProgramResult,
-        program_error::ProgramError, pubkey::Pubkey,
-        system_program::ID as SYSTEM_PROGRAM,
-    },
-    NoStdAccountInfo4,
-};
 
 pub mod ix;
+pub mod solana_nostd_entrypoint;
 use ix::{ProgramInstructionRef as Ix, *};
-use solana_program::log;
+use solana_program::{
+    declare_id, entrypoint::ProgramResult, log, program_error::ProgramError,
+    pubkey::Pubkey, system_program::ID as SYSTEM_PROGRAM,
+};
 pub mod consts;
 pub(crate) mod utils;
 
@@ -44,7 +40,7 @@ pub mod allocator {
 
 fn process_instruction_nostd(
     _program_id: &Pubkey,
-    accounts: &[NoStdAccountInfo4],
+    accounts: &[NoStdAccountInfo],
     data: &[u8],
 ) -> ProgramResult {
     // We lazily check 2/3 of last 3 here since they may be needed
@@ -68,7 +64,7 @@ fn process_instruction_nostd(
             if !validated_config {
                 if solana_program::program_memory::sol_memcmp(
                     config.key().as_ref(),
-                    &CONFIG_ACCOUNT.as_ref(),
+                    CONFIG_ACCOUNT.as_ref(),
                     32,
                 ) != 0
                 {
@@ -193,7 +189,7 @@ impl ProgramConfig {
     /// Owner check is not needed as it was checked on initialization, so it is
     /// checked implicitly by the discriminator check.
     pub(crate) unsafe fn unchecked_load_mut(
-        config: &NoStdAccountInfo4,
+        config: &NoStdAccountInfo,
     ) -> Result<&mut ProgramConfig, ProgramError> {
         // Unpack and split data into discriminator & config
         let config_data = config.unchecked_borrow_mut_data();
@@ -238,14 +234,15 @@ impl Mint {
         8 + core::mem::size_of::<Mint>()
     }
 
-    /// SAFETY: unchecked refers to refcell checks, not to discriminator checks.
+    /// # Safety
+    /// unchecked refers to refcell checks, not to discriminator checks.
     /// i.e. memory safety. You must ensure no one else has a view into config's
     /// account data.
     ///
     /// Discriminator, owner check is still performed.
     /// (owner check need only be performed when we are not mutating mint)
     pub unsafe fn unchecked_load_mut<const OWNER_CHECK: bool>(
-        mint: &NoStdAccountInfo4,
+        mint: &NoStdAccountInfo,
     ) -> Result<&mut Mint, ProgramError> {
         // Unpack and split data into discriminator & mint
         let mint_data = mint.unchecked_borrow_mut_data();
@@ -266,7 +263,7 @@ impl Mint {
     }
 
     #[inline(always)]
-    pub fn owner_check(mint: &NoStdAccountInfo4) -> ProgramResult {
+    pub fn owner_check(mint: &NoStdAccountInfo) -> ProgramResult {
         if *mint.owner() != crate::ID {
             log::sol_log("mint account has incorrect owner");
             return Err(ProgramError::InvalidAccountOwner);
@@ -314,7 +311,8 @@ impl TokenAccount {
         8 + core::mem::size_of::<Self>()
     }
 
-    /// SAFETY: unchecked refers to refcell checks, not to discriminator checks.
+    /// # Safety
+    /// unchecked refers to refcell checks, not to discriminator checks.
     /// i.e. memory safety. You must ensure no one else has a view into config's
     /// account data.
     ///
@@ -322,7 +320,7 @@ impl TokenAccount {
     /// If you call this function you MUST mutate the data to do an implicit
     /// owner check (should be mutated during e.g. mint, transfer)
     pub unsafe fn unchecked_load_mut(
-        token_account: &NoStdAccountInfo4,
+        token_account: &NoStdAccountInfo,
     ) -> Result<&mut TokenAccount, ProgramError> {
         // Unpack and split data into discriminator & token_account
         let token_account_data = token_account.unchecked_borrow_mut_data();
@@ -340,9 +338,9 @@ impl TokenAccount {
     /// Discriminator check. This does not do an owner check!
     /// If you call this function you MUST mutate the data to do an implicit
     /// owner check (should be mutated during e.g. mint, transfer)
-    pub fn checked_load_mut<'a>(
-        token_account_data: &'a mut [u8],
-    ) -> Result<&'a mut TokenAccount, ProgramError> {
+    pub fn checked_load_mut(
+        token_account_data: &mut [u8],
+    ) -> Result<&mut TokenAccount, ProgramError> {
         // Unpack and split data into discriminator & token_account
         let (disc, token_account_bytes) = token_account_data.split_at_mut(8);
 
@@ -357,8 +355,10 @@ impl TokenAccount {
         })
     }
 
+    /// # Safety
+    /// no one else should have a view into this account's data.
     pub unsafe fn check_disc(
-        token_account: &NoStdAccountInfo4,
+        token_account: &NoStdAccountInfo,
     ) -> Result<(&Pubkey, u64, *mut u64), ProgramError> {
         // Unpack and split data into discriminator &token_account
         let (disc, token_account_bytes) = token_account
@@ -437,4 +437,10 @@ impl VaultInfo {
 
         Ok(unsafe { &*(vault_info_bytes.as_ptr() as *const VaultInfo) })
     }
+}
+
+#[cfg(target_os = "solana")]
+#[no_mangle]
+fn custom_panic(_info: &core::panic::PanicInfo<'_>) {
+    log::sol_log("panicked!");
 }

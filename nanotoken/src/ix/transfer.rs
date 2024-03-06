@@ -1,5 +1,5 @@
+use crate::solana_nostd_entrypoint::NoStdAccountInfo;
 use bytemuck::{Pod, Zeroable};
-use solana_nostd_entrypoint::NoStdAccountInfo4;
 use solana_program::{log, program_error::ProgramError};
 
 use crate::{error::NanoTokenError, utils::split_at_unchecked, TokenAccount};
@@ -38,7 +38,7 @@ impl TransferArgs {
 }
 
 pub fn transfer(
-    accounts: &[NoStdAccountInfo4],
+    accounts: &[NoStdAccountInfo],
     args: &TransferArgs,
 ) -> Result<usize, ProgramError> {
     // log::sol_log("transfer");

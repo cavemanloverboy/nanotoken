@@ -1,5 +1,6 @@
+use crate::solana_nostd_entrypoint::{InstructionC, NoStdAccountInfo};
+
 use bytemuck::{Pod, Zeroable};
-use solana_nostd_entrypoint::{InstructionC, NoStdAccountInfo4};
 use solana_program::{
     log::{self},
     program_error::ProgramError,
@@ -47,7 +48,7 @@ impl TransmuteArgs {
 }
 
 pub fn transmute(
-    accounts: &[NoStdAccountInfo4],
+    accounts: &[NoStdAccountInfo],
     args: &TransmuteArgs,
 ) -> Result<usize, ProgramError> {
     // TODO docs

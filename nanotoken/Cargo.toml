@@ -12,10 +12,10 @@ no-entrypoint = []
 nanolog = []
 
 [dependencies]
-solana-nostd-entrypoint = { version = "0.1.0", path = "../../solana-entrypoint" }
-solana-program = "1.18.1 "
+solana-program = "=1.18.1 "
 bytemuck = { version = "1.14.1", features = ["derive"] }
 strum = { version = "0.26.1", default-features = false, features = ["derive"] }
+arrayvec = { version = "0.7.4", default-features = false }
 
 [dev-dependencies]
 solana-program-test = "1.18.1"

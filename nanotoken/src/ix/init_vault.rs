@@ -1,5 +1,5 @@
+use crate::solana_nostd_entrypoint::{InstructionC, NoStdAccountInfo};
 use bytemuck::{Pod, Zeroable};
-use solana_nostd_entrypoint::{InstructionC, NoStdAccountInfo4};
 use solana_program::{
     entrypoint::ProgramResult, log, program_error::ProgramError, pubkey::Pubkey,
 };
@@ -46,7 +46,7 @@ impl InitializeVaultArgs {
 }
 
 pub fn initialize_vault(
-    accounts: &[NoStdAccountInfo4],
+    accounts: &[NoStdAccountInfo],
     args: &InitializeVaultArgs,
 ) -> Result<usize, ProgramError> {
     // TODO DOCS AND VALIDATION
@@ -101,11 +101,11 @@ pub fn initialize_vault(
 }
 
 fn create_vault_info(
-    tokenkeg_mint: &NoStdAccountInfo4,
-    vault_info: &NoStdAccountInfo4,
-    system_program: &NoStdAccountInfo4,
-    payer: &NoStdAccountInfo4,
-    tokenkeg_vault: &NoStdAccountInfo4,
+    tokenkeg_mint: &NoStdAccountInfo,
+    vault_info: &NoStdAccountInfo,
+    system_program: &NoStdAccountInfo,
+    payer: &NoStdAccountInfo,
+    tokenkeg_vault: &NoStdAccountInfo,
     nanotoken_mint: &Pubkey,
     info_bump: u8,
 ) -> Result<(), ProgramError> {
@@ -157,12 +157,12 @@ fn create_vault_info(
 }
 
 fn initialize_program_owned_spl_vault(
-    tokenkeg_mint: &NoStdAccountInfo4,
-    tokenkeg_vault: &NoStdAccountInfo4,
-    tokenkeg_program: &NoStdAccountInfo4,
-    payer: &NoStdAccountInfo4,
-    vault_info: &NoStdAccountInfo4,
-    system_program: &NoStdAccountInfo4,
+    tokenkeg_mint: &NoStdAccountInfo,
+    tokenkeg_vault: &NoStdAccountInfo,
+    tokenkeg_program: &NoStdAccountInfo,
+    payer: &NoStdAccountInfo,
+    vault_info: &NoStdAccountInfo,
+    system_program: &NoStdAccountInfo,
     vault_bump: u8,
 ) -> ProgramResult {
     // Create account, initialize account

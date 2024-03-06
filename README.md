@@ -5,7 +5,7 @@
 
 ### Notes:
 ###### Comparisons:
-Pubkey comparisons via `PartialEq` cost ≈30 cus. This can be reduced to 10 via memop comparison
+Pubkey comparisons via `PartialEq` cost ≈30 cus. This can be reduced to 10 via memcmp syscall
 ```rust
 fn mem_op_consume(invoke_context: &mut InvokeContext, n: u64) -> Result<(), Error> {
     let compute_budget = invoke_context.get_compute_budget();

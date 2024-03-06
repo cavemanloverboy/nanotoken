@@ -1,5 +1,5 @@
+use crate::solana_nostd_entrypoint::NoStdAccountInfo;
 use bytemuck::{Pod, Zeroable};
-use solana_nostd_entrypoint::NoStdAccountInfo4;
 use solana_program::{
     entrypoint::ProgramResult, log, program_error::ProgramError, pubkey::Pubkey,
 };
@@ -44,7 +44,7 @@ impl InitializeMintArgs {
 }
 
 pub fn initialize_mint(
-    accounts: &[NoStdAccountInfo4],
+    accounts: &[NoStdAccountInfo],
     args: &InitializeMintArgs,
 ) -> Result<usize, ProgramError> {
     log::sol_log("init mint");
@@ -75,8 +75,8 @@ pub fn initialize_mint(
 /// If we validate uninitialized disc, write initialized disc, and then
 /// the runtime complains, then we were not the account owner.
 pub(crate) fn checked_initialized_mint(
-    config: &NoStdAccountInfo4,
-    mint: &NoStdAccountInfo4,
+    config: &NoStdAccountInfo,
+    mint: &NoStdAccountInfo,
     mint_authority: &Pubkey,
     mint_decimals: &u64,
 ) -> ProgramResult {

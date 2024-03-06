@@ -1,7 +1,7 @@
 extern crate alloc; // needed for rkyv args
 
+use crate::solana_nostd_entrypoint::NoStdAccountInfo;
 use bytemuck::{Pod, Zeroable};
-use solana_nostd_entrypoint::NoStdAccountInfo4;
 use solana_program::{
     entrypoint::ProgramResult, log, program_error::ProgramError,
 };
@@ -39,7 +39,7 @@ impl InitConfigArgs {
 }
 
 pub fn initialize_config(
-    accounts: &[NoStdAccountInfo4],
+    accounts: &[NoStdAccountInfo],
     args: &InitConfigArgs,
 ) -> Result<usize, ProgramError> {
     log::sol_log("initializing config");
@@ -74,7 +74,7 @@ pub fn initialize_config(
 /// If we vailidate uninitialize disc, write initialized disc, and then
 /// the runtime complains, then we were not the account owner.
 fn checked_initialize_config(
-    config: &NoStdAccountInfo4,
+    config: &NoStdAccountInfo,
     _args: &InitConfigArgs,
 ) -> ProgramResult {
     // Get account data

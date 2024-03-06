@@ -1,0 +1,18 @@
+[package]
+name = "hammer"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+clap = { version = "4.5.0", features = ["derive"] }
+solana-client = "1.18.1"
+solana-sdk = "1.18.1"
+tokio = { version = "1.36.0", features = ["full"] }
+nanotoken = { path = "../nanotoken" }
+bytemuck = "1.14.3"
+indicatif = "0.17.8"
+noop-program = { path = "../noop" }
+solana-cost-model = "1.18.1"
+solana-transaction-status = "1.18.1"

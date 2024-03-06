@@ -1,4 +1,4 @@
-use solana_nostd_entrypoint::{AccountInfoC, InstructionC};
+use crate::solana_nostd_entrypoint::{AccountInfoC, InstructionC};
 use solana_program::{
     entrypoint::ProgramResult, log, program_error::ProgramError,
     pubkey::Pubkey, rent::Rent, sysvar::Sysvar,
