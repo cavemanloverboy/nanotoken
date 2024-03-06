@@ -234,34 +234,6 @@ impl Mint {
         8 + core::mem::size_of::<Mint>()
     }
 
-    /// # Safety
-    /// unchecked refers to refcell checks, not to discriminator checks.
-    /// i.e. memory safety. You must ensure no one else has a view into config's
-    /// account data.
-    ///
-    /// Discriminator, owner check is still performed.
-    /// (owner check need only be performed when we are not mutating mint)
-    pub unsafe fn unchecked_load_mut<const OWNER_CHECK: bool>(
-        mint: &NoStdAccountInfo,
-    ) -> Result<&mut Mint, ProgramError> {
-        // Unpack and split data into discriminator & mint
-        let mint_data = mint.unchecked_borrow_mut_data();
-        let (disc, mint_bytes) = mint_data.split_at_mut(8);
-
-        // We only need to check the first byte
-        if disc[0] != AccountDiscriminator::Mint as u8 {
-            log::sol_log("mint discriminator is incorrect");
-            return Err(ProgramError::InvalidAccountData);
-        }
-
-        // Check owner (only needs to be done if there is no mutation)
-        if OWNER_CHECK {
-            Mint::owner_check(mint)?;
-        }
-
-        Ok(&mut *(mint_bytes.as_mut_ptr() as *mut Mint))
-    }
-
     #[inline(always)]
     pub fn owner_check(mint: &NoStdAccountInfo) -> ProgramResult {
         if *mint.owner() != crate::ID {
@@ -272,7 +244,7 @@ impl Mint {
     }
 
     /// TODO DOCS
-    pub fn checked_load_mut(
+    pub(crate) fn checked_load_mut(
         mint_data: &mut [u8],
     ) -> Result<&mut Mint, ProgramError> {
         // Unpack and split data into discriminator & mint
@@ -311,34 +283,10 @@ impl TokenAccount {
         8 + core::mem::size_of::<Self>()
     }
 
-    /// # Safety
-    /// unchecked refers to refcell checks, not to discriminator checks.
-    /// i.e. memory safety. You must ensure no one else has a view into config's
-    /// account data.
-    ///
-    /// Discriminator is still performed. This does not do an owner check!
-    /// If you call this function you MUST mutate the data to do an implicit
-    /// owner check (should be mutated during e.g. mint, transfer)
-    pub unsafe fn unchecked_load_mut(
-        token_account: &NoStdAccountInfo,
-    ) -> Result<&mut TokenAccount, ProgramError> {
-        // Unpack and split data into discriminator & token_account
-        let token_account_data = token_account.unchecked_borrow_mut_data();
-        let (disc, token_account_bytes) = token_account_data.split_at_mut(8);
-
-        // We only need to check the first byte
-        if disc[0] != AccountDiscriminator::Token as u8 {
-            log::sol_log("token_account discriminator is incorrect");
-            return Err(ProgramError::InvalidAccountData);
-        }
-
-        Ok(&mut *(token_account_bytes.as_mut_ptr() as *mut TokenAccount))
-    }
-
     /// Discriminator check. This does not do an owner check!
     /// If you call this function you MUST mutate the data to do an implicit
     /// owner check (should be mutated during e.g. mint, transfer)
-    pub fn checked_load_mut(
+    pub(crate) fn checked_load_mut(
         token_account_data: &mut [u8],
     ) -> Result<&mut TokenAccount, ProgramError> {
         // Unpack and split data into discriminator & token_account
