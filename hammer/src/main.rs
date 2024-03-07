@@ -73,9 +73,8 @@ enum Commands {
 }
 
 fn main() -> Result<(), Box<dyn Error>> {
-    // const RPC_ENDPOINT: &'static str = "http://localhost:8899";
-    const RPC_ENDPOINT: &'static str = "http://45.250.255.156:8899/";
-    const PS_ENDPOINT: &'static str = "ws://45.250.255.156:8900/";
+    const RPC_ENDPOINT: &'static str = "http://localhost:8899";
+    const PS_ENDPOINT: &'static str = "ws://localhost:8900/";
 
     // Builder::new_current_thread()
     Builder::new_multi_thread()
