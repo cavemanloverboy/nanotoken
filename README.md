@@ -4,9 +4,9 @@
 A zerocopy, `no_alloc` token program for solana that is highly optimized for transfers. The program supports batch invocations, allowing multiple instructions to be executed within a single program invocation. If it were to be used, this could reduce token program blockspace on mainnet from 8-10% to 1-3%.
 
 
-### Notes:
-###### Comparisons:
-Pubkey comparisons via `PartialEq` cost ≈30 cus. This can be reduced to 10 via memcmp syscall
+# Notes/TODOs:
+# 1) Comparisons:
+Pubkey comparisons via `PartialEq` cost several dozen cus. This can be reduced to 10 via memcmp syscall
 ```rust
 fn mem_op_consume(invoke_context: &mut InvokeContext, n: u64) -> Result<(), Error> {
     let compute_budget = invoke_context.get_compute_budget();
