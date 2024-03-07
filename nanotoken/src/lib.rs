@@ -157,22 +157,6 @@ pub struct ProgramConfig {
     mint_index: u64,
 }
 
-#[repr(u64)]
-#[derive(Debug, Copy, Clone, PartialEq, Default)]
-pub enum EventType {
-    #[default]
-    Join,
-    Leave,
-}
-unsafe impl bytemuck::Pod for EventType {}
-unsafe impl bytemuck::Zeroable for EventType {}
-
-unsafe impl bytemuck::Contiguous for EventType {
-    type Int = u64;
-    const MIN_VALUE: u64 = EventType::Join as u64;
-    const MAX_VALUE: u64 = EventType::Leave as u64;
-}
-
 impl ProgramConfig {
     pub const fn space() -> usize {
         8 + core::mem::size_of::<Self>()
