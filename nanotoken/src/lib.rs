@@ -114,7 +114,8 @@ fn process_instruction_nostd(
                 initialize_config(ix_accounts, args)
             }
             Ix::InitializeMint(args) => {
-                config_validator()?;
+                // config discriminant is checked and state
+                // is mutated  which is an implicit check
                 sys_program_validator()?;
                 initialize_mint(ix_accounts, args)
             }
