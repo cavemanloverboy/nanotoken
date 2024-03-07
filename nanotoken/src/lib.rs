@@ -114,6 +114,7 @@ fn process_instruction_nostd(
                 initialize_config(ix_accounts, args)
             }
             Ix::InitializeMint(args) => {
+                config_validator()?;
                 sys_program_validator()?;
                 initialize_mint(ix_accounts, args)
             }
