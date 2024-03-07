@@ -49,12 +49,16 @@ pub fn initialize_vault(
     accounts: &[NoStdAccountInfo],
     args: &InitializeVaultArgs,
 ) -> Result<usize, ProgramError> {
-    // TODO DOCS AND VALIDATION
     // Unpack accounts
     //
-    // 1) tokenkeg_mint will be checked by create_token_account
-    // 2) Config will be checked
-    // 4) payer will be checked by the sol transfer if necessary
+    // 1) tokenkeg_mint will be checked by spl token create_token_account
+    // 2) tokenkeg_vault will be checked by spl token create_token_account
+    // 3) tokenkeg_program is validated by cpi, which expects &SPL_TOKEN_PROGRAM to own the pda being mutated
+    // 4) vault_info is validated by create_pda_funded_by_payer + mutation
+    // 5) nanotoken_mint is validated by create mint handler
+    // 6) Config will be checked by memoized validator closure
+    // 7) system program will be validated by
+    // 8) payer will be checked by the sol transfer if necessary
     let [tokenkeg_mint, tokenkeg_vault, tokenkeg_program, vault_info, nanotoken_mint, _rem @ .., config, system_program, payer] =
         accounts
     else {
@@ -194,18 +198,14 @@ fn initialize_program_owned_spl_vault(
         data: data.as_mut_ptr(),
         data_len: 33,
     };
-    let infos = [
-        tokenkeg_vault.to_info_c(),
-        tokenkeg_mint.to_info_c(),
-        tokenkeg_program.to_info_c(),
-    ];
+    let infos = [tokenkeg_vault.to_info_c(), tokenkeg_mint.to_info_c()];
     let cpi_seeds: &[&[&[u8]]] = &[&vault_seeds];
     #[cfg(target_os = "solana")]
     unsafe {
         solana_program::syscalls::sol_invoke_signed_c(
             &init_account_ix as *const InstructionC as *const u8,
             infos.as_ptr() as *const u8,
-            3,
+            2,
             cpi_seeds.as_ptr() as *const u8,
             0,
         );

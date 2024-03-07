@@ -163,7 +163,7 @@ fn mint_zc() {
         let fa = mint_zc.freeze_authority;
         assert_eq!(fa, expected_auth);
     } else {
-        // TODO
+        // TODO: big endian system (not really needed tbh)
     }
 }
 

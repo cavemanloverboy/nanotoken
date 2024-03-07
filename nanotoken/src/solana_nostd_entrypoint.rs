@@ -48,7 +48,6 @@ macro_rules! entrypoint_nostd_no_duplicates {
             let Some((program_id, accounts, instruction_data)) =
                 $crate::deserialize_nostd_no_dup::<$accounts>(input)
             else {
-                // TODO: better error
                 solana_program::log::sol_log("a duplicate account was found");
                 return u64::MAX;
             };
@@ -576,8 +575,6 @@ impl NoStdAccountInfo {
 
         // Set the mutable data borrow flag
         *borrow_state |= 0b0000_1000;
-
-        assert_eq!(self.data_ptr() as usize % 8, 0); // TODO REMOVE
 
         // Return the mutable reference to data
         Some(RefMut {

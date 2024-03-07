@@ -41,8 +41,11 @@ pub fn transfer(
     accounts: &[NoStdAccountInfo],
     args: &TransferArgs,
 ) -> Result<usize, ProgramError> {
-    // log::sol_log("transfer");
-    // TODO DOCS
+    // Unpack accounts
+    //
+    // 1) from needs an owner/disc check and an authority check
+    // 2) to needs to have the same mint as from, and requires an owner/disc check
+    // 3) owner must be from authority and must be signer
     let [from, to, owner, _rem @ ..] = accounts else {
         log::sol_log("transfer expecting [from, to, owner, .. ]");
         return Err(ProgramError::NotEnoughAccountKeys);

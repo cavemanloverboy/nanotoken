@@ -172,7 +172,6 @@ async fn round_trip() -> Result<(), Box<dyn Error>> {
     // ix 2: create account
     step_4_data[16] = Tag::InitializeAccount as u8;
     step_4_data[24..56].copy_from_slice(ctx.payer.pubkey().as_ref());
-    // TODO switch to key
     step_4_data[56..64].copy_from_slice(0_u64.to_le_bytes().as_ref());
     step_4_data[64..72].copy_from_slice(
         (nanotoken_bump_1 as u64)
@@ -182,7 +181,6 @@ async fn round_trip() -> Result<(), Box<dyn Error>> {
     // ix 3: create account
     step_4_data[72] = Tag::InitializeAccount as u8;
     step_4_data[80..112].copy_from_slice(second_user.pubkey().as_ref());
-    // TODO switch to key
     step_4_data[112..120].copy_from_slice(0_u64.to_le_bytes().as_ref());
     step_4_data[120..128].copy_from_slice(
         (nanotoken_bump_2 as u64)

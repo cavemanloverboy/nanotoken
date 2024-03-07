@@ -60,7 +60,7 @@ pub fn burn(
     // supply)
     let mut mint_data = mint
         .try_borrow_mut_data()
-        .expect("first borrow won't fail"); // TODO unchecked
+        .expect("first borrow won't fail");
     let mint_account = Mint::checked_load_mut(&mut mint_data)?;
 
     // Check if from is signer

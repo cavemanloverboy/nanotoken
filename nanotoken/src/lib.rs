@@ -243,7 +243,6 @@ impl Mint {
         Ok(())
     }
 
-    /// TODO DOCS
     pub(crate) fn checked_load_mut(
         mint_data: &mut [u8],
     ) -> Result<&mut Mint, ProgramError> {

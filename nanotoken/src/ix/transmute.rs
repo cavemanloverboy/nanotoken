@@ -51,7 +51,14 @@ pub fn transmute(
     accounts: &[NoStdAccountInfo],
     args: &TransmuteArgs,
 ) -> Result<usize, ProgramError> {
-    // TODO docs
+    // 1) from can be either a tokenkeg or nanotoken account.
+    // 2) to must be whatever kind of account form is not. both require account-specific checks
+    // 3) owner must be from authority and must be signer (checked during spl transfer, we need to check if from is nanotoken)
+    // 4) tokenkeg_mint is validated by tokenkeg program when creating token account
+    // 5) nanotoken_mint is checked by loader, and is used to validate from/to account.
+    // 6) vault_info is checked by loader, and is used to validate tokenkeg and nanotoken mint
+    // 7) tokenkeg_vault is checked by tokenkeg program
+    // 8) tokenkeg_program pubkey check is validated below
     let [from, to, owner, tokenkeg_mint, nanotoken_mint, vault_info, tokenkeg_vault, tokenkeg_program, _rem @ .., config, system_program, payer] =
         accounts
     else {
@@ -59,7 +66,7 @@ pub fn transmute(
         return Err(ProgramError::NotEnoughAccountKeys);
     };
 
-    // Return early if Transmuting zero
+    // Return early if transmuting zero
     //
     // This is necessary!
     // It is extremely cheap implicit owner check for nanotoken from/to
@@ -266,7 +273,7 @@ pub fn transmute(
         // Check to see if we can do nanotoken -> tokenkeg
         let mut from_data = from
             .try_borrow_mut_data()
-            .expect("no other borrows exist"); // TODO: standardize comment
+            .expect("first borrow won't fail");
         let nanotoken_from = TokenAccount::checked_load_mut(&mut from_data)?;
 
         // Check for authority as signer
