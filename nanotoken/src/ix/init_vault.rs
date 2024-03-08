@@ -115,14 +115,17 @@ fn create_vault_info(
 ) -> Result<(), ProgramError> {
     // Create vault info account
     let pda_seeds = &[b"info", tokenkeg_mint.key().as_ref(), &[info_bump]];
-    create_pda_funded_by_payer(
-        vault_info.to_info_c(),
-        &crate::ID,
-        VaultInfo::space() as u64,
-        pda_seeds,
-        system_program.to_info_c(),
-        payer.to_info_c(),
-    )?;
+    // SAFETY: no one has any write access to any account at this stage.
+    unsafe {
+        create_pda_funded_by_payer(
+            vault_info.to_info_c(),
+            &crate::ID,
+            VaultInfo::space() as u64,
+            pda_seeds,
+            system_program.to_info_c(),
+            payer.to_info_c(),
+        )?
+    };
 
     // Initialize vault info
     unsafe {
@@ -171,14 +174,17 @@ fn initialize_program_owned_spl_vault(
 ) -> ProgramResult {
     // Create account, initialize account
     let vault_seeds = [b"vault", tokenkeg_mint.key().as_ref(), &[vault_bump]];
-    create_pda_funded_by_payer(
-        tokenkeg_vault.to_info_c(),
-        tokenkeg_program.key(),
-        165,
-        &vault_seeds,
-        system_program.to_info_c(),
-        payer.to_info_c(),
-    )?;
+    // SAFETY: no one has any write access to any account at this stage.
+    unsafe {
+        create_pda_funded_by_payer(
+            tokenkeg_vault.to_info_c(),
+            tokenkeg_program.key(),
+            165,
+            &vault_seeds,
+            system_program.to_info_c(),
+            payer.to_info_c(),
+        )?
+    };
 
     // Initialize account
     let mut data = [0; 33];

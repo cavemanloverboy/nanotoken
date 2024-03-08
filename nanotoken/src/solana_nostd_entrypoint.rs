@@ -249,6 +249,7 @@ pub struct AccountMetaC {
     pub is_signer: bool,
 }
 
+#[derive(Clone)]
 pub struct AccountInfoC {
     pub key: *const Pubkey,   /* Public key of the account */
     pub lamports: *const u64, /* Number of lamports owned by this account */

@@ -121,14 +121,17 @@ pub(crate) fn checked_initialize_account(
         &[account_owner.as_ref(), mint_index.as_ref(), &[bump]];
 
     // Init 1) Create token account
-    create_pda_funded_by_payer(
-        token_account.to_info_c(),
-        &crate::ID,
-        TokenAccount::space() as u64,
-        token_account_seeds,
-        system_program.to_info_c(),
-        payer.to_info_c(),
-    )?;
+    // SAFETY: no one has any write access to any account at this stage.
+    unsafe {
+        create_pda_funded_by_payer(
+            token_account.to_info_c(),
+            &crate::ID,
+            TokenAccount::space() as u64,
+            token_account_seeds,
+            system_program.to_info_c(),
+            payer.to_info_c(),
+        )?
+    };
 
     // Split data into discriminator and token account
     // SAFETY:

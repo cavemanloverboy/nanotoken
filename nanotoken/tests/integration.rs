@@ -201,7 +201,7 @@ async fn end_to_end() -> Result<(), Box<dyn Error>> {
         ))
         .await
         .unwrap();
-    // Now create token account
+    // Now create token account (test semi-funded case with transfer prior to invocation)
     let mut ix_data = vec![0; 8 + InitializeAccountArgs::size()];
     let (second_token_account, token_account_bump) =
         TokenAccount::address(0, &second_user.pubkey());
@@ -217,6 +217,12 @@ async fn end_to_end() -> Result<(), Box<dyn Error>> {
         *mint = 0;
         *bump = token_account_bump as u64;
     }
+    // This is the pre-transfer ix
+    let pre_transfer_ix = solana_program::system_instruction::transfer(
+        &ctx.payer.pubkey(),
+        &second_token_account,
+        Rent::default().minimum_balance(0),
+    );
     let accounts = vec![
         // create
         AccountMeta::new(second_token_account, false),
@@ -231,7 +237,7 @@ async fn end_to_end() -> Result<(), Box<dyn Error>> {
         data: ix_data,
     };
     let transaction = Transaction::new_signed_with_payer(
-        &[instruction],
+        &[pre_transfer_ix, instruction],
         Some(&ctx.payer.pubkey()),
         &[&ctx.payer],
         ctx.last_blockhash,
