@@ -8,8 +8,12 @@ pub mod ix;
 pub mod solana_nostd_entrypoint;
 use ix::{ProgramInstructionRef as Ix, *};
 use solana_program::{
-    declare_id, entrypoint::ProgramResult, log, program_error::ProgramError,
-    pubkey::Pubkey, system_program::ID as SYSTEM_PROGRAM,
+    declare_id,
+    entrypoint::ProgramResult,
+    log::{self},
+    program_error::ProgramError,
+    pubkey::Pubkey,
+    system_program::ID as SYSTEM_PROGRAM,
 };
 pub mod consts;
 pub(crate) mod utils;
@@ -18,8 +22,84 @@ pub mod error;
 
 declare_id!("GigabithNd6HmU4nRFPHXAkBK9nAtvNuHnSavWi3G7Zj");
 
-#[cfg(not(feature = "no-entrypoint"))]
-entrypoint_nostd!(process_instruction_nostd, 64);
+#[no_mangle]
+pub unsafe extern "C" fn entrypoint(input: *mut u8) -> u64 {
+    const ACCOUNT_ONE_OFFSET: isize = 8;
+    const ACCOUNT_TWO_OFFSET: isize = 8 + (88 + 56 + 10240 + 8);
+    const ACCOUNT_THREE_OFFSET: isize = 8 + (88 + 56 + 10240 + 8) * 2;
+    const DATA_LEN_OFFSET: isize = ACCOUNT_THREE_OFFSET + (88 + 10240 + 8);
+    const AMOUNT_OFFSET: isize = DATA_LEN_OFFSET + 8;
+
+    // Account data lens are correct
+    const ACCOUNT_ONE_DATA_LEN_OFFSET: isize = ACCOUNT_ONE_OFFSET + 80;
+    const ACCOUNT_TWO_DATA_LEN_OFFSET: isize = ACCOUNT_TWO_OFFSET + 80;
+    const ACCOUNT_THREE_DATA_LEN_OFFSET: isize = ACCOUNT_THREE_OFFSET + 80;
+    if (*input == 3)
+        // account 1 is never dup
+        & (*input.offset(ACCOUNT_ONE_DATA_LEN_OFFSET) == 56)
+        && ((*input.offset(ACCOUNT_TWO_OFFSET) == 255)
+            & (*input.offset(ACCOUNT_TWO_DATA_LEN_OFFSET) == 56))
+        && (*input.offset(ACCOUNT_THREE_OFFSET) == 255)
+            & (*input.offset(ACCOUNT_THREE_DATA_LEN_OFFSET) == 0)
+        // Data length must be 8
+        && (*input.offset(DATA_LEN_OFFSET) == 8)
+    {
+        let amount: u64 = *(input.offset(AMOUNT_OFFSET) as *const u64);
+
+        // Correct mint
+        const ACCOUNT_ONE_MINT_OFFSET: isize =
+            ACCOUNT_ONE_DATA_LEN_OFFSET + 8 + 8 + 32;
+        const ACCOUNT_TWO_MINT_OFFSET: isize =
+            ACCOUNT_TWO_DATA_LEN_OFFSET + 8 + 8 + 32;
+        let a1_mint = input.offset(ACCOUNT_ONE_MINT_OFFSET) as *const u64;
+        let a2_mint = input.offset(ACCOUNT_TWO_MINT_OFFSET) as *const u64;
+        let incorrect_mint = *a1_mint != *a2_mint;
+
+        // Correct owner
+        const ACCOUNT_ONE_OWNER_OFFSET: isize = ACCOUNT_ONE_OFFSET + 88 + 8;
+        const OWNER_KEY_OFFSET: isize = ACCOUNT_THREE_OFFSET + 8;
+        let a1_owner =
+            input.offset(ACCOUNT_ONE_OWNER_OFFSET) as *const [u8; 32];
+        let owner_key = input.offset(OWNER_KEY_OFFSET) as *const [u8; 32];
+        let incorrect_owner = *a1_owner != *owner_key;
+
+        // Execute transfer
+        const ACCOUNT_ONE_AMOUNT_OFFSET: isize = ACCOUNT_ONE_MINT_OFFSET + 8;
+        const ACCOUNT_TWO_AMOUNT_OFFSET: isize = ACCOUNT_TWO_MINT_OFFSET + 8;
+        let a1_amount = input.offset(ACCOUNT_ONE_AMOUNT_OFFSET) as *mut u64;
+        let a2_amount = input.offset(ACCOUNT_TWO_AMOUNT_OFFSET) as *mut u64;
+        let overflow_occurred = amount > *a1_amount;
+        *a1_amount -= amount;
+        *a2_amount += amount;
+
+        const OWNER_SIGNER_OFFSET: isize = ACCOUNT_THREE_OFFSET + 1;
+        let owner_not_signer = *input.offset(OWNER_SIGNER_OFFSET) == 0;
+
+        if incorrect_mint
+            | incorrect_owner
+            | owner_not_signer
+            | overflow_occurred
+        {
+            solana_program::log::sol_log_64(
+                incorrect_mint as u64,
+                incorrect_owner as u64,
+                owner_not_signer as u64,
+                overflow_occurred as u64,
+                0,
+            );
+            return 1;
+        } else {
+            return 0;
+        }
+    }
+
+    let (program_id, accounts, instruction_data) =
+        unsafe { solana_nostd_entrypoint::deserialize_nostd::<64>(input) };
+    match process_instruction_nostd(&program_id, &accounts, &instruction_data) {
+        Ok(()) => solana_program::entrypoint::SUCCESS,
+        Err(error) => error.into(),
+    }
+}
 
 pub mod allocator {
     pub struct NoAlloc;
@@ -43,6 +123,8 @@ fn process_instruction_nostd(
     accounts: &[NoStdAccountInfo],
     data: &[u8],
 ) -> ProgramResult {
+    // Fast path xfer
+
     // We lazily check 2/3 of last 3 here since they may be needed
     // in the proceeding instructions.
     // This memoization makes the validation only happen once.

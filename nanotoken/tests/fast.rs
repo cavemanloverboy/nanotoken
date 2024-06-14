@@ -3,9 +3,7 @@
 use std::{env, error::Error, path::Path};
 
 use nanotoken::{
-    ix::{
-        InitializeAccountArgs, InitializeMintArgs, MintArgs, Tag, TransferArgs,
-    },
+    ix::{InitializeAccountArgs, InitializeMintArgs, MintArgs, Tag},
     Mint, ProgramConfig, TokenAccount,
 };
 use solana_program::{
@@ -24,7 +22,7 @@ use solana_sdk::{
 };
 
 #[tokio::test(flavor = "current_thread")]
-async fn end_to_end() -> Result<(), Box<dyn Error>> {
+async fn fast_xfer() -> Result<(), Box<dyn Error>> {
     let mut program_test = ProgramTest::default();
     program_test.prefer_bpf(true);
     program_test.add_program("nanotoken", nanotoken::ID, None);
@@ -251,15 +249,10 @@ async fn end_to_end() -> Result<(), Box<dyn Error>> {
         .await
         .unwrap();
 
-    // transfer
-    let mut ix_data = vec![0; 8 + TransferArgs::size()];
+    // fast transfer
+    let mut ix_data = vec![0; 8];
     {
-        ix_data[0..8].copy_from_slice(&(Tag::Transfer as u64).to_le_bytes());
-        let TransferArgs { amount } = bytemuck::try_from_bytes_mut(
-            &mut ix_data[8..8 + TransferArgs::size()],
-        )
-        .unwrap();
-        *amount = 5;
+        ix_data[0..8].copy_from_slice(&5_u64.to_le_bytes());
     }
     let accounts = vec![
         // transfer
@@ -295,63 +288,6 @@ async fn end_to_end() -> Result<(), Box<dyn Error>> {
             .await?;
     assert_eq!(second_user_token_account.mint, 0);
     assert_eq!(second_user_token_account.owner, second_user.pubkey());
-    assert_eq!(second_user_token_account.balance, 5);
-
-    // multi-transfer
-    let num_transfers = 2;
-    let mut ix_data = vec![0; num_transfers * (8 + TransferArgs::size())];
-    let mut accounts = vec![];
-    for n in 0..num_transfers {
-        let disc_offset = 8 * n + n * TransferArgs::size();
-        ix_data[disc_offset..8 + disc_offset]
-            .copy_from_slice(&(Tag::Transfer as u64).to_le_bytes());
-        let TransferArgs { amount } = bytemuck::try_from_bytes_mut(
-            &mut ix_data
-                [disc_offset + 8..disc_offset + 8 + TransferArgs::size()],
-        )
-        .unwrap();
-        *amount = 1;
-
-        if n % 2 == 0 {
-            accounts.extend([
-                AccountMeta::new(token_account, false),
-                AccountMeta::new(second_token_account, false),
-                AccountMeta::new_readonly(ctx.payer.pubkey(), true),
-            ])
-        } else {
-            accounts.extend([
-                AccountMeta::new(second_token_account, false),
-                AccountMeta::new(token_account, false),
-                AccountMeta::new_readonly(second_user.pubkey(), true),
-            ])
-        }
-    }
-    let instruction = Instruction {
-        program_id: nanotoken::ID,
-        accounts,
-        data: ix_data,
-    };
-    let transaction = Transaction::new_signed_with_payer(
-        &[instruction],
-        Some(&ctx.payer.pubkey()),
-        &[&ctx.payer, &second_user],
-        ctx.last_blockhash,
-    );
-    println!("payer = {}", ctx.payer.pubkey());
-    println!("token account = {second_token_account}");
-
-    ctx.banks_client
-        .process_transaction(transaction)
-        .await
-        .unwrap();
-
-    // Transfered equal amounts back and forth so same state
-    let user_token_account =
-        get_nanotoken_account(&mut ctx.banks_client, token_account).await?;
-    assert_eq!(user_token_account.balance, 995);
-    let second_user_token_account =
-        get_nanotoken_account(&mut ctx.banks_client, second_token_account)
-            .await?;
     assert_eq!(second_user_token_account.balance, 5);
 
     Ok(())
