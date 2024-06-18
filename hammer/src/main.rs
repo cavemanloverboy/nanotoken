@@ -54,14 +54,14 @@ enum Commands {
     /// Performs the hammer operation
     Hammer {
         /// Approximate tps
-        #[clap(long, default_value_t = 1_000)]
+        #[arg(long, default_value_t = 1_000)]
         tps: u64,
 
         /// Duration to hammer in seconds
-        #[clap(long, default_value_t = 10)]
+        #[arg(long, default_value_t = 10)]
         time: u64,
 
-        #[clap(long, default_value_t = 1)]
+        #[arg(long, default_value_t = 1)]
         num_pairs: usize,
     },
 
@@ -73,8 +73,10 @@ enum Commands {
 }
 
 fn main() -> Result<(), Box<dyn Error>> {
-    const RPC_ENDPOINT: &'static str = "http://localhost:8899";
-    const PS_ENDPOINT: &'static str = "ws://localhost:8900/";
+    // const RPC_ENDPOINT: &'static str = "http://localhost:8899";
+    // const PS_ENDPOINT: &'static str = "ws://localhost:8900/";
+    const RPC_ENDPOINT: &'static str = "https://api.mainnet-beta.solana.com";
+    const PS_ENDPOINT: &'static str = "ws://api.mainnet-beta.solana.com:8900/";
 
     // Builder::new_current_thread()
     Builder::new_multi_thread()
@@ -473,30 +475,10 @@ fn main() -> Result<(), Box<dyn Error>> {
                         let chad2_ta = pairs[iteration%num_pairs][1].ta;
 
                         tokio::task::spawn(async move {
-                            let num_transfers = 2;
-                            let mut ix_data =
-                                vec![
-                                    0;
-                                    num_transfers * (8 + TransferArgs::size())
-                                ];
+                            let num_transfers = 1;
+                            let ix_data = 1_u64.to_le_bytes().to_vec();
                             let mut accounts = vec![];
                             for n in 0..num_transfers {
-                                let disc_offset =
-                                    8 * n + n * TransferArgs::size();
-                                ix_data[disc_offset..8 + disc_offset]
-                                    .copy_from_slice(
-                                        &(Tag::Transfer as u64).to_le_bytes(),
-                                    );
-                                let TransferArgs { amount } =
-                                    bytemuck::try_from_bytes_mut(
-                                        &mut ix_data[disc_offset + 8
-                                            ..disc_offset
-                                                + 8
-                                                + TransferArgs::size()],
-                                    )
-                                    .unwrap();
-                                *amount = 1;
-
                                 if n % 2 == 0 {
                                     accounts.extend([
                                         AccountMeta::new(chad1_ta, false),
@@ -519,7 +501,8 @@ fn main() -> Result<(), Box<dyn Error>> {
                             }
                             let request_cus =
                             ComputeBudgetInstruction::set_compute_unit_limit(
-                                800,
+                                // 800,
+                                348
                             );
                             // this acts as nonce
                             let ix_account_size = ComputeBudgetInstruction::set_loaded_accounts_data_size_limit(56 * 1024 + (idx % (fetch_every)));
@@ -543,7 +526,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                                         instruction
                                     ],
                                     Some(&chad1.pubkey()),
-                                    &[&chad1, &chad2],
+                                    &[&chad1],//, &chad2],
                                     *blockhash.read().unwrap(),
                                 );
 
@@ -741,7 +724,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                         ])
                 }
                 let request_cus =
-                    ComputeBudgetInstruction::set_compute_unit_limit(650);
+                    ComputeBudgetInstruction::set_compute_unit_limit(348);
                     let ix_account_size = ComputeBudgetInstruction::set_loaded_accounts_data_size_limit(64 * 1024);
                     let noop_nonce_ix = Instruction {
                     program_id: noop_program::ID.into(),
